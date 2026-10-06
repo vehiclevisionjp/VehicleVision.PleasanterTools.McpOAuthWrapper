@@ -80,7 +80,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         var authenticated = await users.FindByApiKeyAsync(options.TenantId, password, cancellationToken);
         if (authenticated is null || !authenticated.VerifyApiKey(password) || !authenticated.CanUseApi(options.DatabaseNow))
             return View("Consent", ViewFor(info, text["LoginFailed"].Value));
-        await guard.ResetAsync(options.TenantId, attemptId, cancellationToken);
+        await guard.ReleaseAsync(options.TenantId, attemptId, cancellationToken);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
         var owner = ownerId == authenticated.UserId ? authenticated : ownerId == options.SharedApiKeyUserId
             ? await users.FindByIdAsync(authenticated.TenantId, ownerId, cancellationToken) : null;

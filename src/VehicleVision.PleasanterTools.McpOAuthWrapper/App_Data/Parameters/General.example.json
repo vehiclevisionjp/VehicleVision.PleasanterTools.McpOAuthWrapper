@@ -17,5 +17,6 @@
   "EncryptionCertificatePath": "",
   "Clients": [],
   "AllowDynamicClientRegistration": false,
+  "MaxDynamicClients": 100,
   "AllowedRedirectUris": []
 }

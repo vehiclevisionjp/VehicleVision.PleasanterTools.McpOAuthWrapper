@@ -24,6 +24,8 @@ public sealed class BridgeOptions
     public List<OAuthClient> Clients { get; set; } = [];
     public List<string> AllowedRedirectUris { get; set; } = [];
     public bool AllowDynamicClientRegistration { get; set; }
+    // 動的登録で作るクライアントの上限。同じ名前と redirect URI は同じクライアントを返す。
+    public int MaxDynamicClients { get; set; } = 100;
 
     public string Resource => new Uri(new Uri(Issuer), "mcp").AbsoluteUri;
 }

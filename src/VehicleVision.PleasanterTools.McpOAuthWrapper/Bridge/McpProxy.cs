@@ -80,7 +80,7 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
             context.Response.Headers.Remove("Set-Cookie");
             context.Response.Headers.Remove("WWW-Authenticate");
             if (response?.Headers.TryGetValues("Mcp-Session-Id", out var ids) == true)
-                context.Response.Headers["Mcp-Session-Id"] = sessions.Wrap(ids.Single(), binding);
+                context.Response.Headers["Mcp-Session-Id"] = sessions.Wrap(ids.First(), binding);
             return result;
         }
     }

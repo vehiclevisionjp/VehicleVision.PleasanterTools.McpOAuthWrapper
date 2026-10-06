@@ -37,13 +37,18 @@ public sealed class SqliteBridgeState(IDbContextFactory<OAuthState> factory) : I
         finally { _gate.Release(); }
     }
 
-    public async Task ResetAsync(string id, CancellationToken cancellationToken)
+    // 成功した試行の 1 回分だけを戻す。過去の失敗は残し、成功で制限を回避させない。
+    public async Task ReleaseAsync(string id, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
-            await db.LoginAttempts.Where(x => x.Id == id).ExecuteDeleteAsync(cancellationToken);
+            var attempt = await db.LoginAttempts.FindAsync([id], cancellationToken);
+            if (attempt is null) return;
+            if (attempt.Count > 1) attempt.Count--;
+            else db.Remove(attempt);
+            await db.SaveChangesAsync(cancellationToken);
         }
         finally { _gate.Release(); }
     }
@@ -65,7 +70,7 @@ public sealed class SqliteBridgeState(IDbContextFactory<OAuthState> factory) : I
 public interface IBridgeState
 {
     Task<bool> TryAttemptAsync(string id, CancellationToken ct);
-    Task ResetAsync(string id, CancellationToken ct);
+    Task ReleaseAsync(string id, CancellationToken ct);
     Task CreateConsentAsync(string id, CancellationToken ct);
     Task<bool> ConsumeConsentAsync(string id, CancellationToken ct);
 }
@@ -73,6 +78,6 @@ public interface IBridgeState
 public sealed class LoginGuard(IBridgeState state)
 {
     public Task<bool> TryAttemptAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null) => state.TryAttemptAsync(Key(tenantId, loginId, userId), cancellationToken);
-    public Task ResetAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null) => state.ResetAsync(Key(tenantId, loginId, userId), cancellationToken);
+    public Task ReleaseAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null) => state.ReleaseAsync(Key(tenantId, loginId, userId), cancellationToken);
     private static string Key(int tenantId, string loginId, int? userId) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{tenantId}:" + (userId.HasValue ? $"user:{userId.Value}" : $"login:{loginId.ToUpperInvariant()}"))));
 }
