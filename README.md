@@ -12,7 +12,7 @@ Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth �
    dotnet VehicleVision.PleasanterTools.McpOAuthWrapper.dll --urls http://127.0.0.1:5180
    ```
 
-4. 停止して [導入手順](_documents/導入手順.md) に従い、DB の読み取り専用接続、OAuth クライアント、証明書と公開 HTTPS URL を設定します。設定完了後に `Bridge.Enabled` を `true` にして起動し、AI アプリへ公開 URL の `/mcp` を登録します。
+4. 停止して [導入手順](_documents/導入手順.md) に従い、データベースの読み取り専用接続、OAuth クライアント、証明書と公開 HTTPS URL を設定します。設定完了後に `App_Data/Parameters/General.json` の `Enabled` を `true` にして起動し、AI アプリへ公開 URL の `/mcp` を登録します。
 
 初期設定は接続を無効にしており、起動確認だけでは MCP を利用できません。API キーは先に Pleasanter で発行しておきます。
 

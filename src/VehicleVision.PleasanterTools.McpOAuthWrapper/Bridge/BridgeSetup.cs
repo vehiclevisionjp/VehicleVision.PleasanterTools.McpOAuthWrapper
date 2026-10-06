@@ -37,10 +37,10 @@ public static class BridgeSetup
         var allowHttp = options.AllowDevelopmentHttp && builder.Environment.IsDevelopment();
         if (options.AllowDevelopmentHttp && !builder.Environment.IsDevelopment())
             throw new InvalidOperationException("HTTP の許可は Development 環境専用です。");
-        ValidateUrl(options.Issuer, allowHttp);
+        options.Issuer = ValidateUrl(options.Issuer, allowHttp);
         if (new Uri(options.Issuer).AbsolutePath != "/")
             throw new InvalidOperationException("Issuer は専用ホストのルート URL を指定してください。");
-        ValidateUrl(options.PleasanterUrl, allowHttp);
+        options.PleasanterUrl = ValidateUrl(options.PleasanterUrl, allowHttp);
         foreach (var uri in options.AllowedRedirectUris.Concat(options.Clients.SelectMany(c => c.RedirectUris)))
             ValidateRedirect(uri, allowHttp);
         foreach (var origin in options.AllowedOrigins) ValidateUrl(origin.TrimEnd('/') + "/", allowHttp);
@@ -183,13 +183,14 @@ public static class BridgeSetup
         return certificate;
     }
 
-    private static void ValidateUrl(string value, bool allowHttp)
+    private static string ValidateUrl(string value, bool allowHttp)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.UserInfo)
             || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)
-            || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback))
-            || !value.EndsWith('/'))
-            throw new InvalidOperationException("接続 URL は末尾 / の HTTPS URL が必要です。HTTP はローカル開発専用です。");
+            || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback)))
+            throw new InvalidOperationException("接続 URL は HTTPS URL が必要です。HTTP はローカル開発専用です。");
+        // redirect URI は完全一致が必要なため、この補完の対象にしない。
+        return value.EndsWith('/') ? value : value + "/";
     }
 
     private static void ValidateRedirect(string value, bool allowHttp)
