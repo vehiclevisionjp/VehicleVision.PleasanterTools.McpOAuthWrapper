@@ -41,10 +41,18 @@ public sealed class PleasanterConnectionFactory(RdsOptions options) : IPleasante
     public DbConnection Create() => options.Dbms.ToLowerInvariant() switch
     {
         "postgresql" => new NpgsqlConnection(options.UserConnectionString),
-        "sqlserver" => new SqlConnection(options.UserConnectionString),
+        "sqlserver" => CreateSqlServer(),
         "mysql" => new MySqlConnection(options.UserConnectionString),
         _ => throw new InvalidOperationException("対応していない Dbms です。")
     };
+
+    private SqlConnection CreateSqlServer()
+    {
+        var builder = new SqlConnectionStringBuilder(options.UserConnectionString);
+        // Strict の指定は維持し、それ以外は暗号化を必須にする。
+        if (builder.Encrypt != SqlConnectionEncryptOption.Strict) builder.Encrypt = true;
+        return new SqlConnection(builder.ConnectionString);
+    }
 }
 
 public sealed class PleasanterUserStore(IPleasanterConnectionFactory factory, RdsOptions options)
