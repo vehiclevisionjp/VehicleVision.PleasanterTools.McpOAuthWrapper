@@ -77,11 +77,15 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
             || !await guard.TryAttemptAsync(options.TenantId, loginId, cancellationToken))
             return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
         var authenticated = await users.FindByLoginAsync(options.TenantId, loginId, cancellationToken);
+        // DB の照合規則で同じ利用者になる別表記でも、失敗制限を迂回させない。
+        if (authenticated is not null && !await guard.TryAttemptAsync(options.TenantId, "", cancellationToken, authenticated.UserId))
+            return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
         var passwordMatches = authenticated?.VerifyPassword(password)
             ?? new PleasanterUser(0, 0, "", new string('0', 128), "", true, true, null, null, 0, null, false).VerifyPassword(password);
         if (!passwordMatches || authenticated is null || !authenticated.CanSignIn(options.DatabaseNow))
             return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
         await guard.ResetAsync(options.TenantId, loginId, cancellationToken);
+        await guard.ResetAsync(options.TenantId, "", cancellationToken, authenticated.UserId);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
         if (!await HasKeyAsync(authenticated, ownerId, cancellationToken))
             return View("Consent", ViewFor(info,

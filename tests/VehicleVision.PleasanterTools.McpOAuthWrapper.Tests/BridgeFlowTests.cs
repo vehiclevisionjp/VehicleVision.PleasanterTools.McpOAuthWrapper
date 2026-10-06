@@ -17,6 +17,24 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 public sealed class BridgeFlowTests
 {
     [Fact]
+    public async Task 動的登録は許可一覧のredirectだけを登録し利用者トークンは発行しない()
+    {
+        using var factory = new BridgeFactory(dynamicRegistration: true);
+        using var browser = factory.Browser();
+        var invalid = await browser.PostAsJsonAsync("/connect/register", new { client_name = "Client",
+            redirect_uris = new[] { "https://evil.example/callback" }, token_endpoint_auth_method = "none" });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        var valid = await browser.PostAsJsonAsync("/connect/register", new { client_name = "Client",
+            redirect_uris = new[] { Callback }, token_endpoint_auth_method = "none" });
+        Assert.Equal(HttpStatusCode.Created, valid.StatusCode);
+        var json = await valid.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(string.IsNullOrEmpty(json.GetProperty("client_id").GetString()));
+        Assert.False(json.TryGetProperty("access_token", out _));
+        Assert.False(valid.Headers.Contains("Set-Cookie"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await browser.PostAsync("/mcp", new StringContent("{}"))).StatusCode);
+    }
+
+    [Fact]
     public async Task SSEは上流の完了を待たず最初のイベントを届ける()
     {
         using var factory = new BridgeFactory();
@@ -153,6 +171,22 @@ public sealed class BridgeFlowTests
         Assert.DoesNotContain("code=", replayed.Headers.Location?.Query ?? "");
     }
 
+    [Theory]
+    [InlineData("deny")]
+    [InlineData("approve")]
+    [InlineData("unknown")]
+    public async Task ログイン画面の操作値を変更しても認証を省略して認可できない(string decision)
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var url = AuthorizationUrl();
+        var page = await PageAsync(browser, url);
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = decision,
+            ["loginId"] = "alice", ["password"] = "wrong" });
+        Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain("code=", response.Headers.Location?.Query ?? "");
+    }
+
     [Fact]
     public async Task PKCEの誤りと認可コードの再利用を拒否する()
     {
@@ -264,6 +298,21 @@ public sealed class BridgeFlowTests
         Assert.DoesNotContain("name=\"ticket\"", await correct.Content.ReadAsStringAsync());
     }
 
+    [Fact]
+    public async Task DBで同じ利用者になるログインIDの別表記でも失敗制限を共有する()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var url = AuthorizationUrl();
+        var page = await PageAsync(browser, url);
+        for (var i = 0; i < 5; i++)
+            await PostAsync(browser, url, page, new() { ["decision"] = "login",
+                ["loginId"] = "alice" + new string(' ', i), ["password"] = "wrong" });
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login",
+            ["loginId"] = "alice     ", ["password"] = "correct-password" });
+        Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
+    }
+
     private const string Callback = "https://client.example/callback";
     private static readonly string Verifier = new('a', 64);
     private static string AuthorizationUrl() => "/connect/authorize?client_id=test-client&response_type=code&scope=mcp%20offline_access"
@@ -328,9 +377,11 @@ public sealed class BridgeFlowTests
         public string Root { get; } = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
         public UpstreamHandler Upstream { get; } = new();
         private readonly bool _shared;
-        public BridgeFactory(bool shared = false)
+        private readonly bool _dynamicRegistration;
+        public BridgeFactory(bool shared = false, bool dynamicRegistration = false)
         {
             _shared = shared;
+            _dynamicRegistration = dynamicRegistration;
             Directory.CreateDirectory(Path.Combine(Root, "App_Data", "Parameters"));
             var parameters = Path.Combine(Root, "App_Data", "Parameters");
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");
@@ -340,7 +391,7 @@ public sealed class BridgeFlowTests
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = """
-                CREATE TABLE Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT, Password TEXT, ApiKey TEXT,
+                CREATE TABLE Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT COLLATE RTRIM, Password TEXT, ApiKey TEXT,
                     Disabled INTEGER, Lockout INTEGER, PasswordExpirationTime TEXT NULL, LoginExpirationLimit TEXT NULL,
                     LoginExpirationPeriod INTEGER, LastLoginTime TEXT NULL, EnableSecretKey INTEGER);
                 INSERT INTO Users VALUES (1, 1, 'alice', @hash, 'original-key', 0, 0, NULL, NULL, 0, NULL, 1);
@@ -363,6 +414,8 @@ public sealed class BridgeFlowTests
             builder.UseSetting("Bridge:Clients:0:ClientId", "test-client");
             builder.UseSetting("Bridge:Clients:0:DisplayName", "Test Client");
             builder.UseSetting("Bridge:Clients:0:RedirectUris:0", Callback);
+            builder.UseSetting("Bridge:AllowDynamicClientRegistration", _dynamicRegistration.ToString());
+            builder.UseSetting("Bridge:AllowedRedirectUris:0", Callback);
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Bridge:Enabled"] = "true", ["Bridge:Issuer"] = "http://localhost/", ["Bridge:PleasanterUrl"] = "http://localhost/pleasanter/",

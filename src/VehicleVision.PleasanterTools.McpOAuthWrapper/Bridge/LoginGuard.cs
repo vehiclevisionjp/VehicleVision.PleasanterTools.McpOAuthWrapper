@@ -9,13 +9,13 @@ public sealed class LoginGuard(IDbContextFactory<OAuthState> factory)
     private readonly SemaphoreSlim _gate = new(1);
 
     // 失敗回数を OAuth 用 DB に保持し、再起動や IP の変更でも制限を維持する。
-    public async Task<bool> TryAttemptAsync(int tenantId, string loginId, CancellationToken cancellationToken)
+    public async Task<bool> TryAttemptAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
-            var id = Key(tenantId, loginId);
+            var id = Key(tenantId, loginId, userId);
             var now = DateTime.UtcNow;
             await db.LoginAttempts.Where(x => x.WindowStart < now.AddMinutes(-15)).ExecuteDeleteAsync(cancellationToken);
             var attempt = await db.LoginAttempts.FindAsync([id], cancellationToken);
@@ -37,17 +37,18 @@ public sealed class LoginGuard(IDbContextFactory<OAuthState> factory)
         finally { _gate.Release(); }
     }
 
-    public async Task ResetAsync(int tenantId, string loginId, CancellationToken cancellationToken)
+    public async Task ResetAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
-            await db.LoginAttempts.Where(x => x.Id == Key(tenantId, loginId)).ExecuteDeleteAsync(cancellationToken);
+            await db.LoginAttempts.Where(x => x.Id == Key(tenantId, loginId, userId)).ExecuteDeleteAsync(cancellationToken);
         }
         finally { _gate.Release(); }
     }
 
-    private static string Key(int tenantId, string loginId) => Convert.ToHexString(
-        SHA256.HashData(Encoding.UTF8.GetBytes($"{tenantId}:{loginId.ToUpperInvariant()}")));
+    private static string Key(int tenantId, string loginId, int? userId) => Convert.ToHexString(
+        SHA256.HashData(Encoding.UTF8.GetBytes($"{tenantId}:" +
+            (userId.HasValue ? $"user:{userId.Value}" : $"login:{loginId.ToUpperInvariant()}"))));
 }
