@@ -51,3 +51,5 @@ https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE
 - Sass — MIT: https://github.com/sass/dart-sass/blob/main/LICENSE
 - TypeScript — Apache-2.0: https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt
 - esbuild — MIT: https://github.com/evanw/esbuild/blob/main/LICENSE.md
+- markdownlint — MIT: https://github.com/DavidAnson/markdownlint/blob/main/LICENSE
+- KaTeX（Markdown 検査の推移的依存）— MIT: https://github.com/KaTeX/KaTeX/blob/main/LICENSE

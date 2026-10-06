@@ -33,6 +33,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
+      - run: npm run lint:md
       - name: ロック済み依存を復元する
         run: dotnet restore --locked-mode
       - name: ビルドする
