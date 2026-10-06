@@ -1,0 +1,21 @@
+name: PR タイトルの検査
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review, converted_to_draft]
+    branches: [develop, master]
+permissions:
+  contents: read
+jobs:
+  wip-title:
+    name: WIP が外れているか
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: タイトルを検査する
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if printf '%s' "$TITLE" | grep -Eqi '^[[:space:]]*(wip:|\[wip\])'; then
+            echo '::error::作業完了後に WIP: を外してください。'
+            exit 1
+          fi

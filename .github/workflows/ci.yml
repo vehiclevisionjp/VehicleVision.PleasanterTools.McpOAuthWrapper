@@ -1,0 +1,53 @@
+# Questionnaire の CI を C# のみの構成へ合わせたもの。
+name: CI
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+jobs:
+  build-test:
+    name: ビルドと単体テスト
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: ロック済み依存を復元する
+        run: dotnet restore --locked-mode
+      - name: ビルドする
+        run: dotnet build --no-restore -c Release
+      - name: テストする
+        run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
+      - name: テスト結果を残す
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: テスト結果
+          path: TestResults/*.trx
+          if-no-files-found: warn
+  instructions:
+    name: 指示と参照の検査
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+          persist-credentials: false
+      - run: bash scripts/sync-agents.sh --check
+      - run: bash scripts/reference-isolation-check.sh

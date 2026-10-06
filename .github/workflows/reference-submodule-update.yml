@@ -1,0 +1,96 @@
+# 参照用サブモジュール `_reference/Implem.Pleasanter` の最新化を日次で検出し、
+# 遅れていれば Issue と Draft PR を出す。
+#
+# ■ 何のためか
+#   このサブモジュールは API 仕様・スキーマ・挙動の**事実確認のための参照専用**
+#   （`_reference/README.md`）。**古いままだと、確認結果が現行の Pleasanter と
+#   食い違う。** 手作業に任せていた結果、気付いたときには 3 リリース分
+#   遅れていた（#181）ので、遅れに気付く仕掛けを置く。
+#
+# ■ **Dependabot は使えない**
+#   `package-ecosystem: gitsubmodule` は存在するが、**追えるのは追跡ブランチの
+#   最新コミットだけで、タグを見ない**（dependabot/dependabot-core#1639 /
+#   #2192、2026-09-11 参照）。本リポジトリはリリースタグへ固定する方針なので、
+#   未タグのコミットへ動かされると固定の意味が無くなる。
+#
+# ■ **判定と文面はスクリプト側に置く**
+#   `run: |` の中は行頭が字下げされるため、閉じの `EOF` が行頭に来ず、
+#   ヒアドキュメントが終端しない。Issue / PR の本文を扱う処理は
+#   `scripts/reference-submodule-*.sh` へ寄せてある。手元でも同じものを流せる。
+#
+# ⚠️ **この PR には CI が回らない。** GITHUB_TOKEN の push / PR 作成は、
+#    ワークフローの連鎖を防ぐ仕様で他のワークフローを起こさない（下記 GitHub Docs）。
+#    **確かめたいときは PR を close → reopen する**か、自分のコミットを 1 つ載せる。
+#    この案内は自動 PR の本文にも入れている。
+#
+# ⚠️ **scheduled workflow は既定ブランチ（develop）の内容でしか回らない。**
+#    ここを直しても、develop へ入るまで日次の挙動は変わらない。
+#    **実行時刻はずれることがある**（GitHub 側の混雑で遅れる。定刻の保証は無い）。
+#
+# ⚠️ **必須ステータスチェックにはしない。** 上流の更新でこちらの CI が赤くなる類の
+#    仕掛けであり、他の PR のマージを塞いではいけない
+#    （_documents/ブランチ運用方針.md「必須ステータスチェック」）。
+#
+# 参照した一次情報（いずれも 2026-09-11 参照）
+#   - on.schedule（POSIX cron。UTC 固定で、既定ブランチでのみ実行）
+#     https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
+#   - GITHUB_TOKEN の操作ではワークフローが起動しない
+#     https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow
+#   - actions/checkout v7 は .github/workflows/ci.yml と同じ版に揃えた（勝手に上げない）
+name: 参照サブモジュールの最新化
+
+on:
+  # 毎日 08:00 JST（前日 23:00 UTC）。**cron は UTC 固定**だが、
+  # JST は夏時間が無いためこの対応は年間ずれない
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  # **走っているものを止めない。** PR を作る途中で切ると、ブランチだけ残る
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  check:
+    name: 上流の最新タグと突き合わせる
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: ソースを取得する
+        uses: actions/checkout@v7
+        with:
+          # **サブモジュールは取らない。** 索引の gitlink だけを書き換える
+          submodules: false
+
+      - name: 上流の最新リリースタグを調べる
+        id: check
+        run: bash ./scripts/reference-submodule-check.sh
+
+      - name: 最新であることを記録して終わる
+        if: steps.check.outputs.needs_update != 'true'
+        env:
+          CURRENT_TAG: ${{ steps.check.outputs.current_tag }}
+          CURRENT_SHA: ${{ steps.check.outputs.current_sha }}
+        run: |
+          {
+            echo "## 参照サブモジュールは最新です"
+            echo
+            echo "- 固定位置: \`${CURRENT_TAG:-（タグ無し）}\` (\`$CURRENT_SHA\`)"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: ポインタを進めて Issue と PR を出す
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          LATEST_TAG: ${{ steps.check.outputs.latest_tag }}
+          LATEST_SHA: ${{ steps.check.outputs.latest_sha }}
+          CURRENT_TAG: ${{ steps.check.outputs.current_tag }}
+          CURRENT_SHA: ${{ steps.check.outputs.current_sha }}
+        run: bash ./scripts/reference-submodule-open-pr.sh
