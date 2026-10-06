@@ -1,41 +1,54 @@
 @model VehicleVision.PleasanterTools.McpOAuthWrapper.Controllers.ConsentView
+@inject Microsoft.Extensions.Localization.IStringLocalizer<VehicleVision.PleasanterTools.McpOAuthWrapper.UiText> Text
 <!DOCTYPE html>
-<html lang="ja">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pleasanter への接続許可</title></head>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>@Text["Title"]</title></head>
 <body>
 <main>
-    <h1>Pleasanter への接続許可</h1>
-    <p>接続するアプリ：<strong>@Model.ClientName</strong></p>
-    <p>接続先：@Model.PleasanterUrl</p>
-    <p>許可する操作：Pleasanter MCP の利用。操作できる範囲は使用する Pleasanter アカウントの権限に従います。</p>
-    <p>認可後の戻り先：@Model.RedirectUri</p>
+    @if (Model.Ticket is null)
+    {
+        <nav aria-label="Language">
+        @foreach (var language in new[] { ("ja", "日本語"), ("en", "English"), ("zh", "中文"), ("de", "Deutsch"), ("ko", "한국어"), ("es", "Español"), ("vi", "Tiếng Việt") })
+        {
+            var query = Context.Request.Query.ToDictionary(x => x.Key, x => (string?)x.Value.ToString());
+            query["culture"] = language.Item1;
+            var url = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path.Value!, query);
+            <a href="@url" lang="@language.Item1">@language.Item2</a>
+        }
+        </nav>
+    }
+    <h1>@Text["Title"]</h1>
+    <p>@Text["Client"]：<strong>@Model.ClientName</strong></p>
+    <p>@Text["Target"]：@Model.PleasanterUrl</p>
+    <p>@Text["Scope"]</p>
+    <p>@Text["Return"]：@Model.RedirectUri</p>
     @if (Model.Error is not null) { <p role="alert">@Model.Error</p> }
     <form method="post" action="@Model.ActionUrl">
         @Html.AntiForgeryToken()
         <input type="hidden" name="requestTicket" value="@Model.RequestTicket">
         @if (Model.Ticket is null)
         {
-            <p><label>ログイン ID <input name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></label></p>
-            <p><label>API キー（パスワード欄） <input name="password" type="password" required maxlength="1024" autocomplete="off"></label></p>
-            <p>Pleasanter で発行済みの API キーを入力してください。共通の API キーでログインすると、利用者はその共通アカウントとして扱います。</p>
+            <p><label>@Text["LoginId"] <input name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></label></p>
+            <p><label>@Text["ApiKey"] <input name="password" type="password" required maxlength="1024" autocomplete="off"></label></p>
+            <p>@Text["KeyHelp"]</p>
             @if (Model.AllowSharedKey)
             {
-                <fieldset><legend>接続に使うアカウント</legend>
-                <label><input type="radio" name="keyMode" value="personal" checked> 自分のアカウント</label>
-                <label><input type="radio" name="keyMode" value="shared"> 共通アカウント</label></fieldset>
+                <fieldset><legend>@Text["Account"]</legend>
+                <label><input type="radio" name="keyMode" value="personal" checked> @Text["Personal"]</label>
+                <label><input type="radio" name="keyMode" value="shared"> @Text["Shared"]</label></fieldset>
             }
-            <button type="submit" name="decision" value="login">ログインして確認へ</button>
+            <button type="submit" name="decision" value="login">@Text["Login"]</button>
         }
         else
         {
-            <p>ログインした利用者：@Model.LoginId</p>
-            <p>接続に使う権限：<strong>@Model.KeyDescription</strong></p>
+            <p>@Text["User"]：@Model.LoginId</p>
+            <p>@Text["Permissions"]：<strong>@Model.KeyDescription</strong></p>
             <input type="hidden" name="ticket" value="@Model.Ticket">
-            <button type="submit" name="decision" value="approve">このアプリの接続を許可する</button>
+            <button type="submit" name="decision" value="approve">@Text["Approve"]</button>
         }
-        <button type="submit" name="decision" value="deny" formnovalidate>キャンセル</button>
+        <button type="submit" name="decision" value="deny" formnovalidate>@Text["Cancel"]</button>
     </form>
-    <p>API キーが未発行の場合は、<a href="@Model.PleasanterUrl" target="_blank" rel="noopener noreferrer">Pleasanter 本体</a>で発行してから再試行してください。</p>
+    <p>@Text["MissingBefore"]<a href="@Model.PleasanterUrl" target="_blank" rel="noopener noreferrer">Pleasanter</a>@Text["MissingAfter"]</p>
 </main>
 </body>
 </html>

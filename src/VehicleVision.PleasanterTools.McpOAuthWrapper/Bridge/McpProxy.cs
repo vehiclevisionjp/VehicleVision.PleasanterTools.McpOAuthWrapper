@@ -7,7 +7,7 @@ using Yarp.ReverseProxy.Forwarder;
 namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 
 public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, IHttpForwarder forwarder,
-    HttpMessageInvoker client, SessionBinding sessions)
+    HttpMessageInvoker client, SessionBinding sessions, Microsoft.Extensions.Localization.IStringLocalizer<UiText> text)
 {
     public async Task ForwardAsync(HttpContext context)
     {
@@ -31,8 +31,8 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
         if (owner is null || !owner.CanUseApi(options.DatabaseNow) || string.IsNullOrWhiteSpace(owner.ApiKey)
             || Stamp(owner.ApiKey) != context.User.FindFirstValue("key_owner_stamp"))
         {
-            await Results.Problem(statusCode: 403, title: "Pleasanter の API キーを利用できません。",
-                detail: "Pleasanter 本体で API キーを発行し、アカウントの状態を確認してください。").ExecuteAsync(context);
+            await Results.Problem(statusCode: 403, title: text["Unavailable"].Value,
+                detail: text["UnavailableHelp"].Value).ExecuteAsync(context);
             return;
         }
         // MCP セッションを利用者・API キー所有者・OAuth クライアントに結び付ける。

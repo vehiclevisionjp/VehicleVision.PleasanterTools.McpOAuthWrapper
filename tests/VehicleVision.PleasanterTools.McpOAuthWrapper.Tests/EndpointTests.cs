@@ -1,14 +1,15 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Hosting;
 
 namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 
-public sealed class EndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class EndpointTests : IClassFixture<DisabledBridgeFactory>
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public EndpointTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    public EndpointTests(DisabledBridgeFactory factory) => _factory = factory;
 
     [Fact]
     public async Task ヘルスチェックは認証設定なしで起動確認できる()
@@ -39,5 +40,16 @@ public sealed class EndpointTests : IClassFixture<WebApplicationFactory<Program>
         using var problem = JsonDocument.Parse(body);
         Assert.Equal(501, problem.RootElement.GetProperty("status").GetInt32());
         Assert.DoesNotContain(apiKey, body);
+    }
+}
+
+// 実機検証用のローカル設定があっても、未設定時の挙動を独立して確認する。
+public sealed class DisabledBridgeFactory : WebApplicationFactory<Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "mcp-disabled-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        builder.UseContentRoot(root);
     }
 }

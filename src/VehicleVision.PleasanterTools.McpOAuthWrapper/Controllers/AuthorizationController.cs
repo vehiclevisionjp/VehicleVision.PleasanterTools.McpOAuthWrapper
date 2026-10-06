@@ -22,7 +22,8 @@ public sealed record ConsentView(string ClientName, string RedirectUri, string A
 [EnableRateLimiting("oauth")]
 [RequestSizeLimit(16384)]
 public sealed class AuthorizationController(BridgeOptions options, IPleasanterUserStore users,
-    IOpenIddictApplicationManager applications, LoginGuard guard, OAuthState db, IDataProtectionProvider protection)
+    IOpenIddictApplicationManager applications, LoginGuard guard, OAuthState db, IDataProtectionProvider protection,
+    Microsoft.Extensions.Localization.IStringLocalizer<UiText> text)
     : Controller
 {
     private ITimeLimitedDataProtector Protector<T>() => protection.CreateProtector("OAuth.Consent.v2", typeof(T).Name).ToTimeLimitedDataProtector();
@@ -77,17 +78,17 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         if (decision != "login" || !string.Equals(loginId, options.ApiKeyLoginId, StringComparison.Ordinal)
             || string.IsNullOrEmpty(password) || password.Length > 1024
             || !await guard.TryAttemptAsync(options.TenantId, attemptId, cancellationToken))
-            return View("Consent", ViewFor(info, "ログインできません。API キーを確認し、時間を置いて再試行してください。"));
+            return View("Consent", ViewFor(info, text["LoginFailed"].Value));
         var authenticated = await users.FindByApiKeyAsync(options.TenantId, password, cancellationToken);
         if (authenticated is null || !authenticated.VerifyApiKey(password) || !authenticated.CanUseApi(options.DatabaseNow))
-            return View("Consent", ViewFor(info, "ログインできません。API キーを確認し、時間を置いて再試行してください。"));
+            return View("Consent", ViewFor(info, text["LoginFailed"].Value));
         await guard.ResetAsync(options.TenantId, attemptId, cancellationToken);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
         var owner = ownerId == authenticated.UserId ? authenticated : ownerId == options.SharedApiKeyUserId
             ? await users.FindByIdAsync(authenticated.TenantId, ownerId, cancellationToken) : null;
         if (owner is null || !owner.CanUseApi(options.DatabaseNow) || string.IsNullOrWhiteSpace(owner.ApiKey))
             return View("Consent", ViewFor(info,
-                "選択したアカウントの API キーがありません。Pleasanter 本体で先に発行し、もう一度ログインしてください。"));
+                text["MissingKey"].Value));
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         await db.PendingConsents.Where(x => x.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync(cancellationToken);
         db.Add(new PendingConsent { Id = nonce, ExpiresAt = DateTime.UtcNow.AddMinutes(5) });
@@ -96,8 +97,8 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
             McpProxy.Stamp(authenticated.ApiKey), McpProxy.Stamp(owner.ApiKey), Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query), nonce);
         return View("Consent", ViewFor(info) with
         {
-            ActionUrl = "/account/consent", Ticket = Protect(approved), LoginId = authenticated.LoginId,
-            KeyDescription = ownerId == authenticated.UserId ? "自分の Pleasanter アカウント" : "管理者が指定した共通 Pleasanter アカウント"
+            ActionUrl = CultureUrl("/account/consent"), Ticket = Protect(approved), LoginId = authenticated.LoginId,
+            KeyDescription = ownerId == authenticated.UserId ? text["PersonalPermission"].Value : text["SharedPermission"].Value
         });
     }
 
@@ -145,8 +146,16 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         return owner is not null && owner.CanUseApi(options.DatabaseNow) && !string.IsNullOrWhiteSpace(owner.ApiKey)
             && (expectedStamp is null || McpProxy.Stamp(owner.ApiKey) == expectedStamp);
     }
-    private ConsentView ViewFor(AuthorizationInfo info, string? error = null) => new(info.ClientName,
-        info.RedirectUri, "/account/login", options.PleasanterUrl, options.SharedApiKeyUserId.HasValue, Protect(info), error, ApiKeyLoginId: options.ApiKeyLoginId);
+    private ConsentView ViewFor(AuthorizationInfo info, string? error = null)
+    {
+        // ブラウザーはフォームのリダイレクト先にも form-action を適用する。
+        // OpenIddict が登録と完全一致を検証済みの戻り先だけを許可する。
+        var callback = new Uri(info.RedirectUri).GetLeftPart(UriPartial.Authority);
+        Response.Headers["Content-Security-Policy"] = $"default-src 'none'; form-action 'self' {callback}; frame-ancestors 'none'; base-uri 'none'";
+        return new(info.ClientName, info.RedirectUri, CultureUrl("/account/login"), options.PleasanterUrl,
+            options.SharedApiKeyUserId.HasValue, Protect(info), error, ApiKeyLoginId: options.ApiKeyLoginId);
+    }
+    private static string CultureUrl(string path) => path + "?culture=" + Uri.EscapeDataString(System.Globalization.CultureInfo.CurrentUICulture.Name);
     private string Protect<T>(T data) => Protector<T>().Protect(JsonSerializer.Serialize(data), TimeSpan.FromMinutes(5));
     private T? Unprotect<T>(string? value)
     {

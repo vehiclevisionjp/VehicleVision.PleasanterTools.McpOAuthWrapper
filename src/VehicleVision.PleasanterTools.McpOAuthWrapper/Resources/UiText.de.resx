@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Mit Pleasanter verbinden</value></data>
+  <data name="Client" xml:space="preserve"><value>Anwendung</value></data>
+  <data name="Target" xml:space="preserve"><value>Ziel</value></data>
+  <data name="Scope" xml:space="preserve"><value>Berechtigung: Pleasanter MCP mit den Rechten des ausgewählten Pleasanter-Kontos nutzen.</value></data>
+  <data name="Return" xml:space="preserve"><value>Rückkehradresse nach der Autorisierung</value></data>
+  <data name="LoginId" xml:space="preserve"><value>Anmelde-ID</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API-Schlüssel (Passwortfeld)</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Geben Sie einen von Pleasanter ausgestellten API-Schlüssel ein. Ein gemeinsamer Schlüssel identifiziert das gemeinsame Konto, nicht die einzelne Person.</value></data>
+  <data name="Account" xml:space="preserve"><value>Zu verwendendes Konto</value></data>
+  <data name="Personal" xml:space="preserve"><value>Mein Konto</value></data>
+  <data name="Shared" xml:space="preserve"><value>Gemeinsames Konto</value></data>
+  <data name="Login" xml:space="preserve"><value>Anmelden und prüfen</value></data>
+  <data name="User" xml:space="preserve"><value>Angemeldeter Benutzer</value></data>
+  <data name="Permissions" xml:space="preserve"><value>Verwendete Berechtigungen</value></data>
+  <data name="Approve" xml:space="preserve"><value>Verbindung dieser Anwendung erlauben</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>Falls noch kein API-Schlüssel vorhanden ist, erstellen Sie ihn in </value></data>
+  <data name="MissingAfter" xml:space="preserve"><value> und versuchen Sie es erneut.</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>Anmeldung fehlgeschlagen. Prüfen Sie den API-Schlüssel und versuchen Sie es später erneut.</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>Für das ausgewählte Konto ist kein API-Schlüssel verfügbar. Erstellen Sie ihn in Pleasanter und melden Sie sich erneut an.</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>Mein Pleasanter-Konto</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>Vom Administrator festgelegtes gemeinsames Pleasanter-Konto</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Der Pleasanter-API-Schlüssel ist nicht verfügbar.</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>Erstellen Sie einen API-Schlüssel in Pleasanter und prüfen Sie den Kontostatus.</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>Der MCP-Authentifizierungswrapper ist nicht konfiguriert.</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>Ein Administrator muss OAuth und die Verbindung zu Pleasanter konfigurieren.</value></data>
+</root>

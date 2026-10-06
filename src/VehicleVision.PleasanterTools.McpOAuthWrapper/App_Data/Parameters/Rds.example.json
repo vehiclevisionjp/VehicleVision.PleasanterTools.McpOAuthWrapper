@@ -3,7 +3,7 @@
   "Provider": "Local",
   "SaConnectionString": "",
   "OwnerConnectionString": "",
-  "UserConnectionString": "Server=localhost;Database=Implem.Pleasanter;UID=mcp_reader;PWD=CHANGE_ME",
+  "UserConnectionString": "Server=localhost;Database=Implem.Pleasanter;UID=mcp_reader;PWD=CHANGE_ME;Search Path='\"Implem.Pleasanter\"'",
   "SqlCommandTimeOut": 30,
   "MinimumTime": 3,
   "DeadlockRetryCount": 4,
