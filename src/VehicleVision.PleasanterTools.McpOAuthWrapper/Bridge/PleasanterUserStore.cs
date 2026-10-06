@@ -8,29 +8,26 @@ using Npgsql;
 namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 
 public sealed record PleasanterUser(int TenantId, int UserId, string LoginId,
-    string PasswordHash, string ApiKey, bool Disabled, bool Lockout,
-    DateTime? PasswordExpirationTime, DateTime? LoginExpirationLimit,
-    int LoginExpirationPeriod, DateTime? LastLoginTime, bool EnableSecretKey)
+    string ApiKey, bool Disabled, bool Lockout,
+    DateTime? LoginExpirationLimit,
+    int LoginExpirationPeriod, DateTime? LastLoginTime)
 {
-    public bool CanSignIn(DateTime now) => !Disabled && !Lockout && EnableSecretKey
-        && !Expired(PasswordExpirationTime, now) && !Expired(LoginExpirationLimit, now)
+    public bool CanUseApi(DateTime now) => !Disabled && !Lockout
+        && !Expired(LoginExpirationLimit, now)
         && !(LoginExpirationPeriod > 0 && LastLoginTime is { } last && last > new DateTime(1900, 1, 1)
              && last.AddDays(LoginExpirationPeriod) <= now);
 
     private static bool Expired(DateTime? value, DateTime now) =>
         value is { } expiry && expiry > new DateTime(1900, 1, 1) && expiry <= now;
 
-    public bool VerifyPassword(string password)
-    {
-        var hash = Convert.ToHexStringLower(SHA512.HashData(Encoding.UTF8.GetBytes(password)));
-        return PasswordHash.Length == 128 && CryptographicOperations.FixedTimeEquals(
-            Encoding.ASCII.GetBytes(hash), Encoding.ASCII.GetBytes(PasswordHash.ToLowerInvariant()));
-    }
+    public bool VerifyApiKey(string apiKey) => !string.IsNullOrWhiteSpace(ApiKey)
+        && CryptographicOperations.FixedTimeEquals(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)),
+            SHA256.HashData(Encoding.UTF8.GetBytes(ApiKey)));
 }
 
 public interface IPleasanterUserStore
 {
-    Task<PleasanterUser?> FindByLoginAsync(int tenantId, string loginId, CancellationToken cancellationToken);
+    Task<PleasanterUser?> FindByApiKeyAsync(int tenantId, string apiKey, CancellationToken cancellationToken);
     Task<PleasanterUser?> FindByIdAsync(int tenantId, int userId, CancellationToken cancellationToken);
 }
 
@@ -53,8 +50,8 @@ public sealed class PleasanterConnectionFactory(RdsOptions options) : IPleasante
 public sealed class PleasanterUserStore(IPleasanterConnectionFactory factory, RdsOptions options)
     : IPleasanterUserStore
 {
-    public Task<PleasanterUser?> FindByLoginAsync(int tenantId, string loginId, CancellationToken cancellationToken)
-        => FindAsync(tenantId, "LoginId", loginId, cancellationToken);
+    public Task<PleasanterUser?> FindByApiKeyAsync(int tenantId, string apiKey, CancellationToken cancellationToken)
+        => FindAsync(tenantId, "ApiKey", apiKey, cancellationToken);
 
     public Task<PleasanterUser?> FindByIdAsync(int tenantId, int userId, CancellationToken cancellationToken)
         => FindAsync(tenantId, "UserId", userId, cancellationToken);
@@ -67,8 +64,8 @@ public sealed class PleasanterUserStore(IPleasanterConnectionFactory factory, Rd
             "mysql" => $"`{identifier}`",
             _ => $"\"{identifier}\""
         };
-        string[] columns = ["TenantId", "UserId", "LoginId", "Password", "ApiKey", "Disabled", "Lockout",
-            "PasswordExpirationTime", "LoginExpirationLimit", "LoginExpirationPeriod", "LastLoginTime", "EnableSecretKey"];
+        string[] columns = ["TenantId", "UserId", "LoginId", "ApiKey", "Disabled", "Lockout",
+            "LoginExpirationLimit", "LoginExpirationPeriod", "LastLoginTime"];
         await using var connection = factory.Create();
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
@@ -83,10 +80,10 @@ public sealed class PleasanterUserStore(IPleasanterConnectionFactory factory, Rd
         if (!await reader.ReadAsync(cancellationToken)) return null;
         DateTime? Date(int index) => reader.IsDBNull(index) ? null : reader.GetDateTime(index);
         var user = new PleasanterUser(Convert.ToInt32(reader.GetValue(0)), Convert.ToInt32(reader.GetValue(1)),
-            reader.GetString(2), reader.IsDBNull(3) ? "" : reader.GetString(3), reader.IsDBNull(4) ? "" : reader.GetString(4),
-            Convert.ToBoolean(reader.GetValue(5)), Convert.ToBoolean(reader.GetValue(6)), Date(7), Date(8),
-            Convert.ToInt32(reader.GetValue(9)), Date(10), Convert.ToBoolean(reader.GetValue(11)));
-        // 同じテナントでログイン ID が一意でないときは曖昧な認証をしない。
+            reader.GetString(2), reader.IsDBNull(3) ? "" : reader.GetString(3),
+            Convert.ToBoolean(reader.GetValue(4)), Convert.ToBoolean(reader.GetValue(5)), Date(6),
+            Convert.ToInt32(reader.GetValue(7)), Date(8));
+        // 同じテナントでAPI キーが一意でないときは曖昧な認証をしない。
         return await reader.ReadAsync(cancellationToken) ? null : user;
     }
 }

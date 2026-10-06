@@ -17,7 +17,7 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Controllers;
 
 public sealed record ConsentView(string ClientName, string RedirectUri, string ActionUrl,
     string PleasanterUrl, bool AllowSharedKey, string RequestTicket, string? Error = null,
-    string? Ticket = null, string? LoginId = null, string? KeyDescription = null);
+    string? Ticket = null, string? LoginId = null, string? KeyDescription = null, string ApiKeyLoginId = "apikey");
 
 [EnableRateLimiting("oauth")]
 [RequestSizeLimit(16384)]
@@ -25,7 +25,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     IOpenIddictApplicationManager applications, LoginGuard guard, OAuthState db, IDataProtectionProvider protection)
     : Controller
 {
-    private ITimeLimitedDataProtector Protector<T>() => protection.CreateProtector("OAuth.Consent.v1", typeof(T).Name).ToTimeLimitedDataProtector();
+    private ITimeLimitedDataProtector Protector<T>() => protection.CreateProtector("OAuth.Consent.v2", typeof(T).Name).ToTimeLimitedDataProtector();
     private string ApprovalCookie => Request.IsHttps ? "__Host-McpBridge.Approval" : "McpBridge.Approval";
 
     [HttpGet("/connect/authorize")]
@@ -43,14 +43,15 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
                 .ExecuteDeleteAsync(cancellationToken);
             if (consumed != 1) return Reject(Errors.AccessDenied);
             var user = await users.FindByIdAsync(identity.TenantId, identity.UserId, cancellationToken);
-            if (user is null || !user.CanSignIn(options.DatabaseNow) || McpProxy.Stamp(user.PasswordHash) != identity.PasswordStamp
-                || !await HasKeyAsync(user, identity.KeyOwnerId, cancellationToken)) return Reject(Errors.AccessDenied);
+            if (user is null || !user.CanUseApi(options.DatabaseNow) || McpProxy.Stamp(user.ApiKey) != identity.ApiKeyStamp
+                || !await HasKeyAsync(user, identity.KeyOwnerId, cancellationToken, identity.KeyOwnerStamp)) return Reject(Errors.AccessDenied);
             var claims = new ClaimsIdentity(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             claims.AddClaim(new Claim(Claims.Subject, $"{user.TenantId}:{user.UserId}"));
             claims.AddClaim(new Claim("tenant_id", user.TenantId.ToString()).SetDestinations(Destinations.AccessToken));
             claims.AddClaim(new Claim("user_id", user.UserId.ToString()).SetDestinations(Destinations.AccessToken));
             claims.AddClaim(new Claim("key_owner_id", identity.KeyOwnerId.ToString()).SetDestinations(Destinations.AccessToken));
-            claims.AddClaim(new Claim("password_stamp", identity.PasswordStamp).SetDestinations(Destinations.AccessToken));
+            claims.AddClaim(new Claim("api_key_stamp", identity.ApiKeyStamp).SetDestinations(Destinations.AccessToken));
+            claims.AddClaim(new Claim("key_owner_stamp", identity.KeyOwnerStamp).SetDestinations(Destinations.AccessToken));
             var principal = new ClaimsPrincipal(claims);
             principal.SetScopes(request.GetScopes());
             principal.SetResources(options.Resource);
@@ -72,22 +73,19 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         var info = Unprotect<AuthorizationInfo>(requestTicket);
         if (info is null) return BadRequest();
         if (decision == "deny") return Denied(info);
-        if (decision != "login" || string.IsNullOrWhiteSpace(loginId) || loginId.Length > 256
+        var attemptId = "api-key-ip:" + (HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        if (decision != "login" || !string.Equals(loginId, options.ApiKeyLoginId, StringComparison.Ordinal)
             || string.IsNullOrEmpty(password) || password.Length > 1024
-            || !await guard.TryAttemptAsync(options.TenantId, loginId, cancellationToken))
-            return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
-        var authenticated = await users.FindByLoginAsync(options.TenantId, loginId, cancellationToken);
-        // DB の照合規則で同じ利用者になる別表記でも、失敗制限を迂回させない。
-        if (authenticated is not null && !await guard.TryAttemptAsync(options.TenantId, "", cancellationToken, authenticated.UserId))
-            return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
-        var passwordMatches = authenticated?.VerifyPassword(password)
-            ?? new PleasanterUser(0, 0, "", new string('0', 128), "", true, true, null, null, 0, null, false).VerifyPassword(password);
-        if (!passwordMatches || authenticated is null || !authenticated.CanSignIn(options.DatabaseNow))
-            return View("Consent", ViewFor(info, "ログインできません。入力内容を確認し、時間を置いて再試行してください。"));
-        await guard.ResetAsync(options.TenantId, loginId, cancellationToken);
-        await guard.ResetAsync(options.TenantId, "", cancellationToken, authenticated.UserId);
+            || !await guard.TryAttemptAsync(options.TenantId, attemptId, cancellationToken))
+            return View("Consent", ViewFor(info, "ログインできません。API キーを確認し、時間を置いて再試行してください。"));
+        var authenticated = await users.FindByApiKeyAsync(options.TenantId, password, cancellationToken);
+        if (authenticated is null || !authenticated.VerifyApiKey(password) || !authenticated.CanUseApi(options.DatabaseNow))
+            return View("Consent", ViewFor(info, "ログインできません。API キーを確認し、時間を置いて再試行してください。"));
+        await guard.ResetAsync(options.TenantId, attemptId, cancellationToken);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
-        if (!await HasKeyAsync(authenticated, ownerId, cancellationToken))
+        var owner = ownerId == authenticated.UserId ? authenticated : ownerId == options.SharedApiKeyUserId
+            ? await users.FindByIdAsync(authenticated.TenantId, ownerId, cancellationToken) : null;
+        if (owner is null || !owner.CanUseApi(options.DatabaseNow) || string.IsNullOrWhiteSpace(owner.ApiKey))
             return View("Consent", ViewFor(info,
                 "選択したアカウントの API キーがありません。Pleasanter 本体で先に発行し、もう一度ログインしてください。"));
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -95,7 +93,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         db.Add(new PendingConsent { Id = nonce, ExpiresAt = DateTime.UtcNow.AddMinutes(5) });
         await db.SaveChangesAsync(cancellationToken);
         var approved = new ApprovedIdentity(authenticated.TenantId, authenticated.UserId, ownerId,
-            McpProxy.Stamp(authenticated.PasswordHash), Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query), nonce);
+            McpProxy.Stamp(authenticated.ApiKey), McpProxy.Stamp(owner.ApiKey), Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query), nonce);
         return View("Consent", ViewFor(info) with
         {
             ActionUrl = "/account/consent", Ticket = Protect(approved), LoginId = authenticated.LoginId,
@@ -132,22 +130,23 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         if (result.Principal is not { } principal || !McpProxy.TryIdentity(principal, out var tenant, out var userId, out var ownerId)
             || tenant != options.TenantId) return Reject(Errors.InvalidGrant);
         var user = await users.FindByIdAsync(tenant, userId, cancellationToken);
-        if (user is null || !user.CanSignIn(options.DatabaseNow) || McpProxy.Stamp(user.PasswordHash) != principal.FindFirstValue("password_stamp")
-            || !await HasKeyAsync(user, ownerId, cancellationToken)) return Reject(Errors.InvalidGrant);
+        if (user is null || !user.CanUseApi(options.DatabaseNow) || McpProxy.Stamp(user.ApiKey) != principal.FindFirstValue("api_key_stamp")
+            || !await HasKeyAsync(user, ownerId, cancellationToken, principal.FindFirstValue("key_owner_stamp") ?? "")) return Reject(Errors.InvalidGrant);
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
     private bool ValidRequest(OpenIddictRequest request) => request.CodeChallengeMethod == CodeChallengeMethods.Sha256
         && request.GetScopes().Contains("mcp") && request.GetScopes().All(s => s is "mcp" or Scopes.OfflineAccess)
         && request.GetResources().All(resource => resource == options.Resource);
-    private async Task<bool> HasKeyAsync(PleasanterUser user, int ownerId, CancellationToken cancellationToken)
+    private async Task<bool> HasKeyAsync(PleasanterUser user, int ownerId, CancellationToken cancellationToken, string? expectedStamp = null)
     {
         if (ownerId != user.UserId && ownerId != options.SharedApiKeyUserId) return false;
         var owner = ownerId == user.UserId ? user : await users.FindByIdAsync(user.TenantId, ownerId, cancellationToken);
-        return owner is not null && !owner.Disabled && !owner.Lockout && !string.IsNullOrWhiteSpace(owner.ApiKey);
+        return owner is not null && owner.CanUseApi(options.DatabaseNow) && !string.IsNullOrWhiteSpace(owner.ApiKey)
+            && (expectedStamp is null || McpProxy.Stamp(owner.ApiKey) == expectedStamp);
     }
     private ConsentView ViewFor(AuthorizationInfo info, string? error = null) => new(info.ClientName,
-        info.RedirectUri, "/account/login", options.PleasanterUrl, options.SharedApiKeyUserId.HasValue, Protect(info), error);
+        info.RedirectUri, "/account/login", options.PleasanterUrl, options.SharedApiKeyUserId.HasValue, Protect(info), error, ApiKeyLoginId: options.ApiKeyLoginId);
     private string Protect<T>(T data) => Protector<T>().Protect(JsonSerializer.Serialize(data), TimeSpan.FromMinutes(5));
     private T? Unprotect<T>(string? value)
     {
@@ -166,6 +165,6 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     private static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     private ForbidResult Reject(string error) => Forbid(new AuthenticationProperties(new Dictionary<string, string?>
     { [OpenIddictServerAspNetCoreConstants.Properties.Error] = error }), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-    private sealed record ApprovedIdentity(int TenantId, int UserId, int KeyOwnerId, string PasswordStamp, string RequestHash, string Nonce);
+    private sealed record ApprovedIdentity(int TenantId, int UserId, int KeyOwnerId, string ApiKeyStamp, string KeyOwnerStamp, string RequestHash, string Nonce);
     private sealed record AuthorizationInfo(string AuthorizationUrl, string RedirectUri, string ClientName);
 }

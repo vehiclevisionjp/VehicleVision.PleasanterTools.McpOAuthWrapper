@@ -18,14 +18,6 @@ public static class BridgeSetup
             .AddJsonFile("App_Data/Parameters/Rds.json", optional: false)
             .AddEnvironmentVariables("MCP_RDS_").Build();
         var rds = rdsConfig.Get<RdsOptions>() ?? throw new InvalidOperationException("Rds.json が必要です。");
-        var auth = new ConfigurationBuilder().SetBasePath(root)
-            .AddJsonFile("App_Data/Parameters/Authentication.json", optional: false).Build();
-        var security = new ConfigurationBuilder().SetBasePath(root)
-            .AddJsonFile("App_Data/Parameters/Security.json", optional: false).Build();
-        if (!string.IsNullOrEmpty(auth["Provider"]) && auth["Provider"] != "Local")
-            throw new InvalidOperationException("初期版の DB ログインは Pleasanter のローカル認証に限定します。");
-        if (auth.GetValue<bool>("PasskeyParameters:Enabled") || security["SecondaryAuthentication:Mode"] is not ("None" or "0"))
-            throw new InvalidOperationException("二段階認証・パスキーの迂回を防ぐため、この構成では DB ログインを提供しません。");
         if (rds.Provider != "Local" || string.IsNullOrWhiteSpace(rds.UserConnectionString)
             || rds.UserConnectionString.Contains('#') || rds.SqlCommandTimeOut is < 1 or > 120)
             throw new InvalidOperationException("Rds.json に読み取り専用 UserConnectionString と 1～120 秒のタイムアウトを設定してください。");
@@ -33,6 +25,8 @@ public static class BridgeSetup
             throw new InvalidOperationException("Dbms は PostgreSQL、SQLServer、MySQL のいずれかです。");
         if (options.TenantId <= 0 || options.SharedApiKeyUserId is <= 0)
             throw new InvalidOperationException("TenantId と共通キーの所有者 ID を確認してください。");
+        if (string.IsNullOrWhiteSpace(options.ApiKeyLoginId) || options.ApiKeyLoginId.Length > 256)
+            throw new InvalidOperationException("ApiKeyLoginId は1～256文字で設定してください。");
         _ = TimeZoneInfo.FindSystemTimeZoneById(options.DatabaseTimeZoneId);
         var allowHttp = options.AllowDevelopmentHttp && builder.Environment.IsDevelopment();
         if (options.AllowDevelopmentHttp && !builder.Environment.IsDevelopment())
