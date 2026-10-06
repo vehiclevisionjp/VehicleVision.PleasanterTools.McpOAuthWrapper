@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VehicleVision.PleasanterTools.McpOAuthWrapper/VehicleVision.PleasanterTools.McpOAuthWrapper.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VehicleVision.PleasanterTools.McpOAuthWrapper.Tests/VehicleVision.PleasanterTools.McpOAuthWrapper.Tests.csproj" />
+  </Folder>
+</Solution>
