@@ -28,4 +28,25 @@
   <data name="UnavailableHelp" xml:space="preserve"><value>Issue an API key in Pleasanter and check the account status.</value></data>
   <data name="NotConfigured" xml:space="preserve"><value>The MCP authentication wrapper is not configured.</value></data>
   <data name="ConfigureHelp" xml:space="preserve"><value>An administrator must configure OAuth authentication and the connection to Pleasanter.</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>Connection steps</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>Sign in with an API key</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>Review connection</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>Your API key is not stored by the wrapper. You can disconnect from the app at any time.</value>
+  </data>
 </root>

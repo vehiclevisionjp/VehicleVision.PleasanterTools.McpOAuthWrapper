@@ -28,4 +28,25 @@
   <data name="UnavailableHelp" xml:space="preserve"><value>Erstellen Sie einen API-Schlüssel in Pleasanter und prüfen Sie den Kontostatus.</value></data>
   <data name="NotConfigured" xml:space="preserve"><value>Der MCP-Authentifizierungswrapper ist nicht konfiguriert.</value></data>
   <data name="ConfigureHelp" xml:space="preserve"><value>Ein Administrator muss OAuth und die Verbindung zu Pleasanter konfigurieren.</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>Verbindungsschritte</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>Mit API-Schlüssel anmelden</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>Verbindung prüfen</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>Anzeigen</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>Verbergen</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>Der Wrapper speichert Ihren API-Schlüssel nicht. Sie können die Verbindung jederzeit in der App trennen.</value>
+  </data>
 </root>

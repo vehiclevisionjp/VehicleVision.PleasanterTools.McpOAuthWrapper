@@ -4,6 +4,7 @@
 .idea/
 TestResults/
 artifacts/
+node_modules/
 temp/
 .worktrees/
 .env

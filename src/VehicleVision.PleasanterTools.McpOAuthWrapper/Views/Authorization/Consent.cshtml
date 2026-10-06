@@ -1,54 +1,81 @@
 @model VehicleVision.PleasanterTools.McpOAuthWrapper.Controllers.ConsentView
 @inject Microsoft.Extensions.Localization.IStringLocalizer<VehicleVision.PleasanterTools.McpOAuthWrapper.UiText> Text
+@{ var culture = System.Globalization.CultureInfo.CurrentUICulture.Name; }
 <!DOCTYPE html>
-<html lang="@System.Globalization.CultureInfo.CurrentUICulture.Name">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>@Text["Title"]</title></head>
+<html lang="@culture">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@Text["Title"] | Pleasanter</title>
+    <link rel="stylesheet" href="/assets/app.css" asp-append-version="true">
+    <script src="/assets/app.js" asp-append-version="true" defer></script>
+</head>
 <body>
-<main>
-    @if (Model.Ticket is null)
-    {
-        <nav aria-label="Language">
-        @foreach (var language in new[] { ("ja", "日本語"), ("en", "English"), ("zh", "中文"), ("de", "Deutsch"), ("ko", "한국어"), ("es", "Español"), ("vi", "Tiếng Việt") })
-        {
-            var query = Context.Request.Query.ToDictionary(x => x.Key, x => (string?)x.Value.ToString());
-            query["culture"] = language.Item1;
-            var url = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path.Value!, query);
-            <a href="@url" lang="@language.Item1">@language.Item2</a>
-        }
-        </nav>
-    }
-    <h1>@Text["Title"]</h1>
-    <p>@Text["Client"]：<strong>@Model.ClientName</strong></p>
-    <p>@Text["Target"]：@Model.PleasanterUrl</p>
-    <p>@Text["Scope"]</p>
-    <p>@Text["Return"]：@Model.RedirectUri</p>
-    @if (Model.Error is not null) { <p role="alert">@Model.Error</p> }
-    <form method="post" action="@Model.ActionUrl">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="requestTicket" value="@Model.RequestTicket">
-        @if (Model.Ticket is null)
-        {
-            <p><label>@Text["LoginId"] <input name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></label></p>
-            <p><label>@Text["ApiKey"] <input name="password" type="password" required maxlength="1024" autocomplete="off"></label></p>
-            <p>@Text["KeyHelp"]</p>
-            @if (Model.AllowSharedKey)
+<main class="shell">
+    <header class="brand"><span class="brand-mark" aria-hidden="true">P</span><div>Pleasanter<small>MCP OAuth Wrapper</small></div></header>
+    <div class="workspace">
+        <section class="intro" aria-labelledby="page-title">
+            <span class="eyebrow">MCP · OAuth 2.0</span>
+            <h1 id="page-title">@Text["Title"]</h1>
+            <p>@Text["Scope"]</p>
+            <ol class="steps" aria-label="@Text["Steps"]">
+                <li aria-current="@(Model.Ticket is null ? "step" : null)"><span>1</span>@Text["StepLogin"]</li>
+                <li aria-current="@(Model.Ticket is not null ? "step" : null)"><span>2</span>@Text["StepConsent"]</li>
+            </ol>
+            <dl class="details">
+                <dt>@Text["Client"]</dt><dd><strong>@Model.ClientName</strong></dd>
+                <dt>@Text["Target"]</dt><dd>@Model.PleasanterUrl</dd>
+                <dt>@Text["Return"]</dt><dd>@Model.RedirectUri</dd>
+            </dl>
+        </section>
+        <section class="card" aria-labelledby="card-title">
+            @if (Model.Ticket is null)
             {
-                <fieldset><legend>@Text["Account"]</legend>
-                <label><input type="radio" name="keyMode" value="personal" checked> @Text["Personal"]</label>
-                <label><input type="radio" name="keyMode" value="shared"> @Text["Shared"]</label></fieldset>
+                <nav class="languages" aria-label="@Text["Language"]">
+                @foreach (var language in new[] { ("ja", "日本語"), ("en", "English"), ("zh", "中文"), ("de", "Deutsch"), ("ko", "한국어"), ("es", "Español"), ("vi", "Tiếng Việt") })
+                {
+                    var query = Context.Request.Query.ToDictionary(x => x.Key, x => (string?)x.Value.ToString());
+                    query["culture"] = language.Item1;
+                    var url = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(Context.Request.Path.Value!, query);
+                    <a href="@url" lang="@language.Item1" aria-current="@(culture == language.Item1 ? "true" : null)">@language.Item2</a>
+                }
+                </nav>
             }
-            <button type="submit" name="decision" value="login">@Text["Login"]</button>
-        }
-        else
-        {
-            <p>@Text["User"]：@Model.LoginId</p>
-            <p>@Text["Permissions"]：<strong>@Model.KeyDescription</strong></p>
-            <input type="hidden" name="ticket" value="@Model.Ticket">
-            <button type="submit" name="decision" value="approve">@Text["Approve"]</button>
-        }
-        <button type="submit" name="decision" value="deny" formnovalidate>@Text["Cancel"]</button>
-    </form>
-    <p>@Text["MissingBefore"]<a href="@Model.PleasanterUrl" target="_blank" rel="noopener noreferrer">Pleasanter</a>@Text["MissingAfter"]</p>
+            <h2 id="card-title">@(Model.Ticket is null ? Text["StepLogin"] : Text["StepConsent"])</h2>
+            @if (Model.Error is not null) { <div class="alert" role="alert">@Model.Error</div> }
+            <form method="post" action="@Model.ActionUrl" data-auth-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestTicket" value="@Model.RequestTicket">
+                @if (Model.Ticket is null)
+                {
+                    <div class="field"><label for="login-id">@Text["LoginId"]</label><input id="login-id" name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></div>
+                    <div class="field">
+                        <label for="api-key">@Text["ApiKey"]</label>
+                        <div class="key-control"><input id="api-key" name="password" type="password" required maxlength="1024" autocomplete="off" aria-describedby="key-help" spellcheck="false"><button type="button" data-key-toggle data-show="@Text["ShowKey"]" data-hide="@Text["HideKey"]" aria-controls="api-key" aria-pressed="false" hidden>@Text["ShowKey"]</button></div>
+                    </div>
+                    <p id="key-help" class="hint">@Text["KeyHelp"]</p>
+                    @if (Model.AllowSharedKey)
+                    {
+                        <fieldset><legend>@Text["Account"]</legend>
+                            <label><input type="radio" name="keyMode" value="personal" checked> @Text["Personal"]</label>
+                            <label><input type="radio" name="keyMode" value="shared"> @Text["Shared"]</label>
+                        </fieldset>
+                    }
+                }
+                else
+                {
+                    <div class="identity"><p><small>@Text["User"]</small><strong>@Model.LoginId</strong></p><p><small>@Text["Permissions"]</small>@Model.KeyDescription</p></div>
+                    <input type="hidden" name="ticket" value="@Model.Ticket">
+                }
+                <div class="actions">
+                    @if (Model.Ticket is null) { <button class="primary" type="submit" name="decision" value="login">@Text["Login"]</button> }
+                    else { <button class="primary" type="submit" name="decision" value="approve">@Text["Approve"]</button> }
+                    <button type="submit" name="decision" value="deny" formnovalidate>@Text["Cancel"]</button>
+                </div>
+            </form>
+            <p class="support">@Text["MissingBefore"]<a href="@Model.PleasanterUrl" target="_blank" rel="noopener noreferrer">Pleasanter</a>@Text["MissingAfter"]</p>
+        </section>
+    </div>
+    <footer class="footer">@Text["SecurityNote"]</footer>
 </main>
 </body>
 </html>

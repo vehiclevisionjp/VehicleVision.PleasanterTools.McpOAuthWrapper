@@ -56,15 +56,22 @@ public sealed class BridgeFlowTests
     }
 
     [KvsFact]
-    public async Task Kvsの認可コードを別インスタンスで同時交換しても一度だけ成功する()
+    public async Task Kvsの認可コードを別インスタンスで同時交換しても二重発行しない()
     {
         var prefix = "test-" + Guid.NewGuid().ToString("N");
         using var first = new BridgeFactory(kvsPrefix: prefix); using var a = first.Browser();
         using var second = new BridgeFactory(kvsPrefix: prefix); using var b = second.Browser();
         var code = await GetCodeAsync(a);
         var responses = await Task.WhenAll(ExchangeAsync(a, code, Verifier), ExchangeAsync(b, code, Verifier));
-        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.OK));
-        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.BadRequest));
+        // 再利用検出で認可全体が失効すると、先に処理した交換も拒否され得る（RFC 6749 §4.1.2）。
+        Assert.InRange(responses.Count(x => x.StatusCode == HttpStatusCode.OK), 0, 1);
+        Assert.All(responses, response => Assert.True(response.StatusCode is HttpStatusCode.OK or HttpStatusCode.BadRequest));
+        foreach (var response in responses.Where(x => x.StatusCode == HttpStatusCode.BadRequest))
+        {
+            var failure = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("invalid_grant", failure.RootElement.GetProperty("error").GetString());
+            Assert.False(failure.RootElement.TryGetProperty("access_token", out _));
+        }
     }
 
     [KvsFact]
@@ -85,6 +92,22 @@ public sealed class BridgeFlowTests
         await Assert.ThrowsAsync<OpenIddict.Abstractions.OpenIddictExceptions.ConcurrencyException>(() => backend.SaveAsync(latest!, false, CancellationToken.None));
         Assert.Equal(1, await new KvsTokenStore(backend).PruneAsync(DateTimeOffset.UtcNow.AddDays(-1), CancellationToken.None));
         Assert.Null(await backend.IndexedAsync<KvsToken>("prune-reference", CancellationToken.None));
+
+        var code = new KvsToken();
+        KvsBackend.Set(code, "Type", "urn:openiddict:params:oauth:token-type:authorization_code");
+        KvsBackend.Set(code, "Status", "valid");
+        await backend.SaveAsync(code, true, CancellationToken.None);
+        var left = await backend.ReadAsync<KvsToken>(code.Id, CancellationToken.None);
+        var right = await backend.ReadAsync<KvsToken>(code.Id, CancellationToken.None);
+        async Task<bool> Redeem(KvsToken item)
+        {
+            KvsBackend.Set(item, "Status", "redeemed");
+            try { await backend.SaveAsync(item, false, CancellationToken.None); return true; }
+            catch (OpenIddict.Abstractions.OpenIddictExceptions.ConcurrencyException) { return false; }
+        }
+        Assert.Equal(1, (await Task.WhenAll(Redeem(left!), Redeem(right!))).Count(x => x));
+        // 最新版を読み直しても、同じコードの再消費は許可しない。
+        Assert.False(await Redeem((await backend.ReadAsync<KvsToken>(code.Id, CancellationToken.None))!));
     }
     [KvsFact]
     public async Task Kvsのクライアント識別子は重複せず削除は関連する認可とトークンを原子的に消す()
@@ -118,7 +141,7 @@ public sealed class BridgeFlowTests
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         using var initial = await browser.GetAsync(AuthorizationUrl());
-        Assert.Equal("default-src 'none'; form-action 'self' https://client.example; frame-ancestors 'none'; base-uri 'none'",
+        Assert.Equal("default-src 'none'; style-src 'self'; script-src 'self'; form-action 'self' https://client.example; frame-ancestors 'none'; base-uri 'none'",
             Assert.Single(initial.Headers.GetValues("Content-Security-Policy")));
         var page = await initial.Content.ReadAsStringAsync();
         using var consent = await PostAsync(browser, AuthorizationUrl(), page,

@@ -1,4 +1,4 @@
-# Questionnaire の CI を C# のみの構成へ合わせたもの。
+# Questionnaire の CI を C# と画面アセットの構成へ合わせたもの。
 name: CI
 on:
   push:
@@ -27,6 +27,13 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm run lint:md
       - name: ロック済み依存を復元する
         run: dotnet restore --locked-mode
       - name: ビルドする

@@ -21,6 +21,7 @@ var app = builder.Build();
 app.UseRequestLocalization();
 
 app.UseExceptionHandler();
+app.UseStaticFiles();
 app.MapHealthChecks("/health/live");
 
 // 接続を設定するまでは、MCP の操作が成功したように見せない。

@@ -28,4 +28,25 @@
   <data name="UnavailableHelp" xml:space="preserve"><value>请在 Pleasanter 中签发 API 密钥并检查账户状态。</value></data>
   <data name="NotConfigured" xml:space="preserve"><value>MCP 认证包装器尚未配置。</value></data>
   <data name="ConfigureHelp" xml:space="preserve"><value>管理员需要配置 OAuth 认证和 Pleasanter 连接。</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>连接步骤</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>使用 API 密钥登录</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>确认连接</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>显示</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>隐藏</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>包装器不会存储 API 密钥。您可以随时在应用中断开连接。</value>
+  </data>
 </root>

@@ -32,3 +32,11 @@ deny／approve／unknown をログイン POST の操作値に送っても、誤�
 - [CodeQL の認証迂回クエリ](https://codeql.github.com/codeql-query-help/csharp/cs-user-controlled-bypass/)
 - [MCP Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
 - [OpenIddict ASP.NET Core](https://documentation.openiddict.com/integrations/aspnet-core)
+
+## cs/insecure-sql-connection（#5）
+
+SQL Server 接続の暗号化を接続ファクトリーで明示的に必須とする。Encrypt=False／Optional が設定されていても Mandatory に補正し、Strict は維持する。証明書検証は既定で有効とし、TrustServerCertificate の指定は変更しない。隔離した Docker の検証環境だけで自己署名証明書を許可する。
+
+省略・False・Optional・True・Strict の5ケースで実際に作成された接続設定を検査する。指摘を却下せず、修正コミットに対する CodeQL の再解析で解消を確認する。
+
+一次情報：[SqlClient の暗号化設定](https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder.encrypt?view=sqlclient-dotnet-core-7.0)。参照日：2026-10-06。

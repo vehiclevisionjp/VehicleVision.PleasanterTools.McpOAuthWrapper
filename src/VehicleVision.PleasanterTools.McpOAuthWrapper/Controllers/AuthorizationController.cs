@@ -147,7 +147,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         // ブラウザーはフォームのリダイレクト先にも form-action を適用する。
         // OpenIddict が登録と完全一致を検証済みの戻り先だけを許可する。
         var callback = new Uri(info.RedirectUri).GetLeftPart(UriPartial.Authority);
-        Response.Headers["Content-Security-Policy"] = $"default-src 'none'; form-action 'self' {callback}; frame-ancestors 'none'; base-uri 'none'";
+        Response.Headers["Content-Security-Policy"] = $"default-src 'none'; style-src 'self'; script-src 'self'; form-action 'self' {callback}; frame-ancestors 'none'; base-uri 'none'";
         return new(info.ClientName, info.RedirectUri, CultureUrl("/account/login"), options.PleasanterUrl,
             options.SharedApiKeyUserId.HasValue, Protect(info), error, ApiKeyLoginId: options.ApiKeyLoginId);
     }
