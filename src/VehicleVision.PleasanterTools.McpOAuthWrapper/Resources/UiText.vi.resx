@@ -28,4 +28,25 @@
   <data name="UnavailableHelp" xml:space="preserve"><value>Tạo khóa API trong Pleasanter và kiểm tra trạng thái tài khoản.</value></data>
   <data name="NotConfigured" xml:space="preserve"><value>Bộ chuyển tiếp xác thực MCP chưa được cấu hình.</value></data>
   <data name="ConfigureHelp" xml:space="preserve"><value>Quản trị viên cần cấu hình OAuth và kết nối với Pleasanter.</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>Các bước kết nối</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>Đăng nhập bằng khóa API</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>Kiểm tra kết nối</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>Hiện</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>Ẩn</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>Wrapper không lưu khóa API. Bạn có thể ngắt kết nối từ ứng dụng bất cứ lúc nào.</value>
+  </data>
 </root>

@@ -118,7 +118,7 @@ public sealed class BridgeFlowTests
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         using var initial = await browser.GetAsync(AuthorizationUrl());
-        Assert.Equal("default-src 'none'; form-action 'self' https://client.example; frame-ancestors 'none'; base-uri 'none'",
+        Assert.Equal("default-src 'none'; style-src 'self'; script-src 'self'; form-action 'self' https://client.example; frame-ancestors 'none'; base-uri 'none'",
             Assert.Single(initial.Headers.GetValues("Content-Security-Policy")));
         var page = await initial.Content.ReadAsStringAsync();
         using var consent = await PostAsync(browser, AuthorizationUrl(), page,
