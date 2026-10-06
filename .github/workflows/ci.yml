@@ -1,4 +1,4 @@
-# Questionnaire の CI を C# のみの構成へ合わせたもの。
+# Questionnaire の CI を C# と画面アセットの構成へ合わせたもの。
 name: CI
 on:
   push:

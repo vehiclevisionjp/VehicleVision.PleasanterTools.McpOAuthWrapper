@@ -9,8 +9,16 @@ if (key && toggle) {
     toggle.textContent = (visible ? toggle.dataset.hide : toggle.dataset.show) ?? "";
   });
   // 戻る操作で表示状態や入力したキーを残さない。
-  window.addEventListener("pagehide", () => { key.type = "password"; key.value = ""; });
+  window.addEventListener("pagehide", () => {
+    key.type = "password";
+    key.value = "";
+    toggle.setAttribute("aria-pressed", "false");
+    toggle.textContent = toggle.dataset.show ?? "";
+  });
 }
+window.addEventListener("pageshow", () => {
+  document.querySelector<HTMLFormElement>("[data-auth-form]")?.removeAttribute("aria-busy");
+});
 document.querySelector<HTMLFormElement>("[data-auth-form]")?.addEventListener("submit", (event) => {
   const form = event.currentTarget as HTMLFormElement;
   // submitter を無効化すると decision が送信されないため、状態表示だけを変更する。
