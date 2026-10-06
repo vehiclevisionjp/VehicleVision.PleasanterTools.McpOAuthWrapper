@@ -1,4 +1,4 @@
-# Questionnaire の CI を C# のみの構成へ合わせたもの。
+# Questionnaire の CI を C# と画面アセットの構成へ合わせたもの。
 name: CI
 on:
   push:
@@ -27,12 +27,30 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm run lint:md
       - name: ロック済み依存を復元する
         run: dotnet restore --locked-mode
       - name: ビルドする
         run: dotnet build --no-restore -c Release
       - name: テストする
         run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
+      - name: 配布物を作成する
+        id: package
+        shell: pwsh
+        run: ./scripts/package.ps1
+      - name: 配布物を残す
+        uses: actions/upload-artifact@v7
+        with:
+          name: McpOAuthWrapper
+          path: ${{ steps.package.outputs.directory }}/
+          if-no-files-found: error
+          retention-days: 30
       - name: テスト結果を残す
         if: always()
         uses: actions/upload-artifact@v7
@@ -51,3 +69,39 @@ jobs:
           persist-credentials: false
       - run: bash scripts/sync-agents.sh --check
       - run: bash scripts/reference-isolation-check.sh
+  kvs-tests:
+    name: KVS の認証・中継テスト（${{ matrix.name }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - name: Valkey
+            image: valkey/valkey:9.1.2
+            cli: valkey-cli
+          - name: Redis
+            image: redis:8.2
+            cli: redis-cli
+    services:
+      kvs:
+        image: ${{ matrix.image }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "${{ matrix.cli }} ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      MCP_TEST_KVS_CONNECTION: localhost:6379
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet restore --locked-mode
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build --no-restore -c Release

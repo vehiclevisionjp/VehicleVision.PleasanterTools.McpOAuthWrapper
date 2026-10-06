@@ -1,0 +1,22 @@
+{
+  "Enabled": false,
+  "ApiKeyLoginId": "apikey",
+  "Issuer": "https://localhost:7042/",
+  "PleasanterUrl": "https://localhost/",
+  "TenantId": 1,
+  "DatabaseTimeZoneId": "UTC",
+  "SharedApiKeyUserId": null,
+  "StateStore": "Sqlite",
+  "KvsConnectionString": "",
+  "KvsKeyPrefix": "pleasanter-mcp-oauth",
+  "StateDirectory": "App_Data/Wrapper",
+  "AllowDevelopmentHttp": false,
+  "TrustedProxyAddresses": [],
+  "AllowedOrigins": [],
+  "SigningCertificatePath": "",
+  "EncryptionCertificatePath": "",
+  "Clients": [],
+  "AllowDynamicClientRegistration": false,
+  "MaxDynamicClients": 100,
+  "AllowedRedirectUris": []
+}

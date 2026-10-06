@@ -11,6 +11,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  npm-audit:
+    name: npm 依存の脆弱性検査
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=moderate
   nuget-audit:
     name: NuGet 依存の脆弱性検査
     runs-on: ubuntu-latest

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Pleasanter への接続許可</value></data>
+  <data name="Client" xml:space="preserve"><value>接続するアプリ</value></data>
+  <data name="Target" xml:space="preserve"><value>接続先</value></data>
+  <data name="Scope" xml:space="preserve"><value>許可する操作：Pleasanter MCP の利用。操作できる範囲は使用する Pleasanter アカウントの権限に従います。</value></data>
+  <data name="Return" xml:space="preserve"><value>認可後の戻り先</value></data>
+  <data name="LoginId" xml:space="preserve"><value>ログイン ID</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API キー（パスワード欄）</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Pleasanter で発行済みの API キーを入力してください。共通の API キーでログインすると、利用者はその共通アカウントとして扱います。</value></data>
+  <data name="Account" xml:space="preserve"><value>接続に使うアカウント</value></data>
+  <data name="Personal" xml:space="preserve"><value>自分のアカウント</value></data>
+  <data name="Shared" xml:space="preserve"><value>共通アカウント</value></data>
+  <data name="Login" xml:space="preserve"><value>ログインして確認へ</value></data>
+  <data name="User" xml:space="preserve"><value>ログインした利用者</value></data>
+  <data name="Permissions" xml:space="preserve"><value>接続に使う権限</value></data>
+  <data name="Approve" xml:space="preserve"><value>このアプリの接続を許可する</value></data>
+  <data name="Cancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>API キーが未発行の場合は、</value></data>
+  <data name="MissingAfter" xml:space="preserve"><value>で発行してから再試行してください。</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>ログインできません。API キーを確認し、時間を置いて再試行してください。</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>選択したアカウントの API キーがありません。Pleasanter で先に発行し、もう一度ログインしてください。</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>自分の Pleasanter アカウント</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>管理者が指定した共通 Pleasanter アカウント</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Pleasanter の API キーを利用できません。</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>Pleasanter で API キーを発行し、アカウントの状態を確認してください。</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>MCP 認証ラッパーの接続が未設定です。</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>管理者が OAuth 認証と Pleasanter への接続を設定する必要があります。</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>接続手順</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>API キーでログイン</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>接続内容の確認</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>表示</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>隠す</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>API キーはラッパーに保存されません。許可した接続はアプリ側から解除できます。</value>
+  </data>
+</root>

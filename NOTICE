@@ -17,6 +17,23 @@ https://github.com/Implem/Implem.Pleasanter
 https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
 https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt
 
+アプリの直接依存（参照日: 2026-10-06）:
+Microsoft.AspNetCore.DataProtection.StackExchangeRedis — MIT（上記 ASP.NET Core）
+StackExchange.Redis — MIT
+https://github.com/StackExchange/StackExchange.Redis/blob/main/LICENSE
+OpenIddict.AspNetCore / OpenIddict.EntityFrameworkCore — Apache-2.0
+https://github.com/openiddict/openiddict-core/blob/dev/LICENSE.md
+Yarp.ReverseProxy — MIT
+https://github.com/dotnet/yarp/blob/main/LICENSE.txt
+Microsoft.EntityFrameworkCore.Sqlite — MIT
+https://github.com/dotnet/efcore/blob/main/LICENSE.txt
+Npgsql — PostgreSQL License
+https://github.com/npgsql/npgsql/blob/main/LICENSE
+Microsoft.Data.SqlClient — MIT
+https://github.com/dotnet/SqlClient/blob/main/LICENSE
+MySqlConnector — MIT
+https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE
+
 テスト用の直接依存（配布する Web アプリには含めない）:
 Microsoft.AspNetCore.Mvc.Testing — MIT（上記 ASP.NET Core）
 Microsoft.NET.Test.Sdk — MIT
@@ -29,3 +46,10 @@ coverlet.collector — MIT
 https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE
 
 推移的依存と実際の版は各プロジェクトの packages.lock.json に記録する。
+
+画面ビルド用（実行環境へツールを配布しない）:
+- Sass — MIT: https://github.com/sass/dart-sass/blob/main/LICENSE
+- TypeScript — Apache-2.0: https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt
+- esbuild — MIT: https://github.com/evanw/esbuild/blob/main/LICENSE.md
+- markdownlint — MIT: https://github.com/DavidAnson/markdownlint/blob/main/LICENSE
+- KaTeX（Markdown 検査の推移的依存）— MIT: https://github.com/KaTeX/KaTeX/blob/main/LICENSE

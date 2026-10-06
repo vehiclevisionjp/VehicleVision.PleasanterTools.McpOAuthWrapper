@@ -1,0 +1,249 @@
+using StackExchange.Redis;
+using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge.Kvs;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
+using static OpenIddict.Abstractions.OpenIddictConstants;
+
+namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
+
+public static class BridgeSetup
+{
+    public static void AddBridge(this WebApplicationBuilder builder, BridgeOptions options)
+    {
+        var root = builder.Environment.ContentRootPath;
+        var rdsConfig = new ConfigurationBuilder().SetBasePath(root)
+            .AddJsonFile("App_Data/Parameters/Rds.json", optional: false)
+            .AddEnvironmentVariables("MCP_RDS_").Build();
+        var rds = rdsConfig.Get<RdsOptions>() ?? throw new InvalidOperationException("Rds.json が必要です。");
+        if (rds.Provider != "Local" || string.IsNullOrWhiteSpace(rds.UserConnectionString)
+            || rds.UserConnectionString.Contains('#') || rds.SqlCommandTimeOut is < 1 or > 120)
+            throw new InvalidOperationException("Rds.json に読み取り専用 UserConnectionString と 1～120 秒のタイムアウトを設定してください。");
+        if (rds.Dbms.ToLowerInvariant() is not ("postgresql" or "sqlserver" or "mysql"))
+            throw new InvalidOperationException("Dbms は PostgreSQL、SQLServer、MySQL のいずれかです。");
+        if (options.TenantId <= 0 || options.SharedApiKeyUserId is <= 0)
+            throw new InvalidOperationException("TenantId と共通キーの所有者 ID を確認してください。");
+        if (string.IsNullOrWhiteSpace(options.ApiKeyLoginId) || options.ApiKeyLoginId.Length > 256)
+            throw new InvalidOperationException("ApiKeyLoginId は1～256文字で設定してください。");
+        if (options.MaxDynamicClients is < 1 or > 10000)
+            throw new InvalidOperationException("MaxDynamicClients は 1～10000 で設定してください。");
+        _ = TimeZoneInfo.FindSystemTimeZoneById(options.DatabaseTimeZoneId);
+        var allowHttp = options.AllowDevelopmentHttp && builder.Environment.IsDevelopment();
+        if (options.AllowDevelopmentHttp && !builder.Environment.IsDevelopment())
+            throw new InvalidOperationException("HTTP の許可は Development 環境専用です。");
+        options.Issuer = ValidateUrl(options.Issuer, allowHttp);
+        if (new Uri(options.Issuer).AbsolutePath != "/")
+            throw new InvalidOperationException("Issuer は専用ホストのルート URL を指定してください。");
+        options.PleasanterUrl = ValidateUrl(options.PleasanterUrl, allowHttp);
+        foreach (var uri in options.AllowedRedirectUris.Concat(options.Clients.SelectMany(c => c.RedirectUris)))
+            ValidateRedirect(uri, allowHttp);
+        foreach (var origin in options.AllowedOrigins) ValidateUrl(origin.TrimEnd('/') + "/", allowHttp);
+        // IIS 統合が設定する既定の転送元を、空の信頼一覧で消さない。
+        if (options.TrustedProxyAddresses.Count > 0) builder.Services.Configure<ForwardedHeadersOptions>(forwarded =>
+        {
+            forwarded.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+            forwarded.ForwardLimit = 1;
+            forwarded.KnownProxies.Clear();
+            forwarded.KnownIPNetworks.Clear();
+            foreach (var address in options.TrustedProxyAddresses)
+                forwarded.KnownProxies.Add(System.Net.IPAddress.Parse(address));
+            forwarded.AllowedHosts.Add(new Uri(options.Issuer).Host);
+        });
+        if (!options.Clients.Any() && !options.AllowDynamicClientRegistration)
+            throw new InvalidOperationException("OAuth クライアントまたは許可済み redirect URI 付き動的登録を設定してください。");
+        if (options.AllowDynamicClientRegistration && options.AllowedRedirectUris.Count == 0)
+            throw new InvalidOperationException("動的登録には AllowedRedirectUris の明示的な許可一覧が必要です。");
+
+        builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton(rds);
+        builder.Services.AddSingleton<IPleasanterConnectionFactory, PleasanterConnectionFactory>();
+        builder.Services.AddScoped<IPleasanterUserStore, PleasanterUserStore>();
+        var redis = options.StateStore.Equals("Redis", StringComparison.OrdinalIgnoreCase);
+        if (!redis && !options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("StateStore は Sqlite または Redis を指定してください。");
+        Lazy<ConnectionMultiplexer>? connection = null;
+        var protection = builder.Services.AddDataProtection().SetApplicationName("Pleasanter.McpOAuthWrapper");
+        if (redis)
+        {
+            if (string.IsNullOrWhiteSpace(options.KvsConnectionString) || !System.Text.RegularExpressions.Regex.IsMatch(options.KvsKeyPrefix, "^[A-Za-z0-9:_-]{1,128}$"))
+                throw new InvalidOperationException("KvsConnectionString と専用の KvsKeyPrefix を指定してください。");
+            connection = new Lazy<ConnectionMultiplexer>(() =>
+            {
+                try
+                {
+                    var config = ConfigurationOptions.Parse(options.KvsConnectionString); config.AbortOnConnectFail = true;
+                    return ConnectionMultiplexer.Connect(config);
+                }
+                catch (Exception ex) when (ex is RedisException or ArgumentException)
+                { throw new InvalidOperationException("KVS に接続できません。接続先・認証・TLS の設定を確認してください。"); }
+            });
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ => connection.Value);
+            builder.Services.AddSingleton<KvsBackend>();
+            builder.Services.AddHostedService<KvsMaintenance>();
+            builder.Services.AddSingleton<IBridgeState, KvsBridgeState>();
+            protection.PersistKeysToStackExchangeRedis(() => connection.Value.GetDatabase(), "{" + options.KvsKeyPrefix + "}:keys");
+        }
+        else
+        {
+            var directory = Path.GetFullPath(options.StateDirectory, root);
+            Directory.CreateDirectory(directory);
+            builder.Services.AddDbContextFactory<OAuthState>(db =>
+            { db.UseSqlite($"Data Source={Path.Combine(directory, "oauth.db")}"); db.UseOpenIddict(); });
+            builder.Services.AddSingleton<IBridgeState, SqliteBridgeState>();
+            protection.PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(directory, "keys")));
+        }
+        builder.Services.AddSingleton<LoginGuard>();
+        builder.Services.AddAntiforgery(anti =>
+        {
+            anti.Cookie.Name = allowHttp ? "McpBridge.Antiforgery" : "__Host-McpBridge.Antiforgery";
+            anti.Cookie.SecurePolicy = allowHttp ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+            anti.Cookie.HttpOnly = true;
+            anti.Cookie.SameSite = SameSiteMode.Strict;
+        });
+
+        X509Certificate2? signing = null;
+        X509Certificate2? encryption = null;
+        if (!builder.Environment.IsDevelopment())
+        {
+            signing = LoadCertificate(options.SigningCertificatePath, options.CertificatePassword, root);
+            encryption = LoadCertificate(options.EncryptionCertificatePath, options.CertificatePassword, root);
+            protection.ProtectKeysWithCertificate(encryption);
+        }
+        builder.Services.AddOpenIddict()
+            .AddCore(core =>
+            {
+                if (!redis) core.UseEntityFrameworkCore().UseDbContext<OAuthState>();
+                else
+                {
+                    core.DisableEntityCaching();
+                    core.SetDefaultApplicationEntity<KvsApplication>().SetDefaultAuthorizationEntity<KvsAuthorization>()
+                        .SetDefaultScopeEntity<KvsScope>().SetDefaultTokenEntity<KvsToken>();
+                    core.ReplaceApplicationStore<KvsApplication, KvsApplicationStore>().ReplaceAuthorizationStore<KvsAuthorization, KvsAuthorizationStore>()
+                        .ReplaceScopeStore<KvsScope, KvsScopeStore>().ReplaceTokenStore<KvsToken, KvsTokenStore>();
+                }
+            })
+            .AddServer(server =>
+            {
+                server.SetIssuer(new Uri(options.Issuer));
+                server.SetAuthorizationEndpointUris("connect/authorize");
+                server.SetTokenEndpointUris("connect/token");
+                server.SetRevocationEndpointUris("connect/revoke");
+                server.AllowAuthorizationCodeFlow().AllowRefreshTokenFlow();
+                server.RequireProofKeyForCodeExchange();
+                server.RegisterScopes("mcp");
+                server.RegisterResources(new Uri(options.Resource));
+                server.Configure(configuration => configuration.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
+                if (options.AllowDynamicClientRegistration)
+                    server.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.HandleConfigurationRequestContext>(handler =>
+                        handler.UseInlineHandler(context =>
+                        {
+                            context.Metadata["registration_endpoint"] = new Uri(new Uri(options.Issuer), "connect/register").AbsoluteUri;
+                            return ValueTask.CompletedTask;
+                        }));
+                server.SetAccessTokenLifetime(TimeSpan.FromMinutes(15));
+                server.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(2));
+                server.SetRefreshTokenLifetime(TimeSpan.FromDays(1));
+                server.UseReferenceAccessTokens().UseReferenceRefreshTokens();
+                if (signing is not null && encryption is not null)
+                    server.AddSigningCertificate(signing).AddEncryptionCertificate(encryption);
+                else
+                    server.AddDevelopmentSigningCertificate().AddDevelopmentEncryptionCertificate();
+                var asp = server.UseAspNetCore().EnableAuthorizationEndpointPassthrough().EnableTokenEndpointPassthrough();
+                if (allowHttp) asp.DisableTransportSecurityRequirement();
+            })
+            .AddValidation(validation =>
+            {
+                validation.UseLocalServer();
+                validation.AddAudiences(options.Resource);
+                validation.EnableTokenEntryValidation();
+                validation.UseAspNetCore();
+            });
+        builder.Services.AddAuthentication();
+        builder.Services.AddAuthorization();
+        builder.Services.AddControllersWithViews();
+        builder.Services.AddHttpForwarder();
+        builder.Services.AddSingleton<SessionBinding>();
+        builder.Services.AddSingleton(new HttpMessageInvoker(new SocketsHttpHandler
+        {
+            AllowAutoRedirect = false,
+            UseCookies = false,
+            AutomaticDecompression = System.Net.DecompressionMethods.None,
+            ConnectTimeout = TimeSpan.FromSeconds(15)
+        }));
+        builder.Services.AddScoped<McpProxy>();
+        builder.Services.AddRateLimiter(limits =>
+        {
+            limits.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            limits.AddPolicy("oauth", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+                { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+        });
+    }
+
+    public static async Task InitializeBridgeAsync(this WebApplication app, BridgeOptions options)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        if (options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+            await scope.ServiceProvider.GetRequiredService<OAuthState>().Database.EnsureCreatedAsync();
+        var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+        foreach (var client in options.Clients)
+        {
+            var descriptor = DescribeClient(client.ClientId, client.DisplayName, client.RedirectUris, options.Resource);
+            for (int retry = 0; retry < 3; retry++)
+            {
+                try
+                {
+                    var existing = await manager.FindByClientIdAsync(client.ClientId);
+                    if (existing is null) await manager.CreateAsync(descriptor);
+                    else await manager.UpdateAsync(existing, descriptor);
+                    break;
+                }
+                catch (OpenIddictExceptions.ConcurrencyException) when (retry < 2) { }
+            }
+        }
+    }
+
+    public static OpenIddictApplicationDescriptor DescribeClient(string id, string name, IEnumerable<string> redirects, string resource)
+    {
+        var result = new OpenIddictApplicationDescriptor
+        { ClientId = id, DisplayName = name, ClientType = ClientTypes.Public, ConsentType = ConsentTypes.Explicit };
+        foreach (var uri in redirects) result.RedirectUris.Add(new Uri(uri));
+        result.Permissions.UnionWith([Permissions.Endpoints.Authorization, Permissions.Endpoints.Token,
+            Permissions.Endpoints.Revocation, Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken,
+            Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "mcp", Permissions.Prefixes.Resource + resource]);
+        result.Requirements.Add(Requirements.Features.ProofKeyForCodeExchange);
+        return result;
+    }
+
+    private static X509Certificate2 LoadCertificate(string path, string password, string root)
+    {
+        if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("本番では署名・暗号化証明書を設定してください。");
+        var certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.GetFullPath(path, root), password);
+        if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
+            || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
+            throw new InvalidOperationException("証明書の秘密鍵と有効期限を確認してください。");
+        return certificate;
+    }
+
+    private static string ValidateUrl(string value, bool allowHttp)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.UserInfo)
+            || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)
+            || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback)))
+            throw new InvalidOperationException("接続 URL は HTTPS URL が必要です。HTTP はローカル開発専用です。");
+        // redirect URI は完全一致が必要なため、この補完の対象にしない。
+        return value.EndsWith('/') ? value : value + "/";
+    }
+
+    private static void ValidateRedirect(string value, bool allowHttp)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.UserInfo)
+            || !string.IsNullOrEmpty(uri.Fragment)
+            || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback)))
+            throw new InvalidOperationException("redirect URI は HTTPS の完全一致で登録してください。");
+    }
+}

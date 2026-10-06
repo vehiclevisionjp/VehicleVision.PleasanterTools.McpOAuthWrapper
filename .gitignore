@@ -4,6 +4,7 @@
 .idea/
 TestResults/
 artifacts/
+node_modules/
 temp/
 .worktrees/
 .env
@@ -16,3 +17,8 @@ temp/
 *.pfx
 *.pem
 *.key
+**/App_Data/Parameters/Rds.json
+**/App_Data/Parameters/General.json
+**/App_Data/Parameters/Authentication.json
+**/App_Data/Parameters/Security.json
+**/App_Data/Wrapper/

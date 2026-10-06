@@ -1,0 +1,25 @@
+{
+  "name": "pleasanter-mcp-oauth-wrapper-ui",
+  "private": true,
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && sass --no-source-map --style=compressed frontend/styles.scss src/VehicleVision.PleasanterTools.McpOAuthWrapper/wwwroot/assets/app.css && esbuild frontend/app.ts --bundle --minify --target=es2022 --outfile=src/VehicleVision.PleasanterTools.McpOAuthWrapper/wwwroot/assets/app.js",
+    "check": "npm run build && git diff --exit-code -- src/VehicleVision.PleasanterTools.McpOAuthWrapper/wwwroot/assets",
+    "audit": "npm audit --audit-level=moderate",
+    "lint:md": "node scripts/markdownlint.mjs",
+    "lint:md:fix": "node scripts/markdownlint.mjs --fix"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "markdownlint": "0.41.1",
+    "sass": "1.105.1",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "katex": "0.19.0"
+  }
+}

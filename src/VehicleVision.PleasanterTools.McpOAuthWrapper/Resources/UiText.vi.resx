@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Kết nối với Pleasanter</value></data>
+  <data name="Client" xml:space="preserve"><value>Ứng dụng</value></data>
+  <data name="Target" xml:space="preserve"><value>Đích kết nối</value></data>
+  <data name="Scope" xml:space="preserve"><value>Quyền: sử dụng Pleasanter MCP theo quyền của tài khoản Pleasanter đã chọn.</value></data>
+  <data name="Return" xml:space="preserve"><value>Địa chỉ trở về sau khi cấp quyền</value></data>
+  <data name="LoginId" xml:space="preserve"><value>ID đăng nhập</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>Khóa API (ô mật khẩu)</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Nhập khóa API do Pleasanter cấp. Khóa dùng chung xác định tài khoản dùng chung, không xác định từng người.</value></data>
+  <data name="Account" xml:space="preserve"><value>Tài khoản sử dụng</value></data>
+  <data name="Personal" xml:space="preserve"><value>Tài khoản của tôi</value></data>
+  <data name="Shared" xml:space="preserve"><value>Tài khoản dùng chung</value></data>
+  <data name="Login" xml:space="preserve"><value>Đăng nhập và xem lại</value></data>
+  <data name="User" xml:space="preserve"><value>Người dùng đã đăng nhập</value></data>
+  <data name="Permissions" xml:space="preserve"><value>Quyền sử dụng</value></data>
+  <data name="Approve" xml:space="preserve"><value>Cho phép ứng dụng này kết nối</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Hủy</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>Nếu chưa có khóa API, hãy tạo khóa trong </value></data>
+  <data name="MissingAfter" xml:space="preserve"><value> rồi thử lại.</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>Không thể đăng nhập. Kiểm tra khóa API và thử lại sau.</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>Tài khoản đã chọn không có khóa API khả dụng. Tạo khóa trong Pleasanter rồi đăng nhập lại.</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>Tài khoản Pleasanter của tôi</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>Tài khoản Pleasanter dùng chung do quản trị viên cấu hình</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Không thể sử dụng khóa API Pleasanter.</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>Tạo khóa API trong Pleasanter và kiểm tra trạng thái tài khoản.</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>Bộ chuyển tiếp xác thực MCP chưa được cấu hình.</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>Quản trị viên cần cấu hình OAuth và kết nối với Pleasanter.</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>Các bước kết nối</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>Đăng nhập bằng khóa API</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>Kiểm tra kết nối</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>Hiện</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>Ẩn</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>Wrapper không lưu khóa API. Bạn có thể ngắt kết nối từ ứng dụng bất cứ lúc nào.</value>
+  </data>
+</root>

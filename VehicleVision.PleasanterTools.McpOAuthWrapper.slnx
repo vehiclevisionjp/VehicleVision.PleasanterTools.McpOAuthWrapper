@@ -5,4 +5,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/VehicleVision.PleasanterTools.McpOAuthWrapper.Tests/VehicleVision.PleasanterTools.McpOAuthWrapper.Tests.csproj" />
   </Folder>
+  <Folder Name="/_development/" />
+  <Folder Name="/_development/tests/" />
+  <Folder Name="/_development/tests/database-smoke/">
+    <Project Path="_development/tests/database-smoke/DatabaseSmoke.csproj" />
+  </Folder>
 </Solution>

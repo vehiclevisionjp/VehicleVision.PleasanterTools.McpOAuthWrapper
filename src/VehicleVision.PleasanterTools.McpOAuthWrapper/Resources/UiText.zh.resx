@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>连接 Pleasanter</value></data>
+  <data name="Client" xml:space="preserve"><value>应用程序</value></data>
+  <data name="Target" xml:space="preserve"><value>连接目标</value></data>
+  <data name="Scope" xml:space="preserve"><value>授权：使用 Pleasanter MCP。操作范围取决于所选 Pleasanter 账户的权限。</value></data>
+  <data name="Return" xml:space="preserve"><value>授权后的返回地址</value></data>
+  <data name="LoginId" xml:space="preserve"><value>登录 ID</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API 密钥（密码栏）</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>请输入 Pleasanter 已签发的 API 密钥。共享密钥将用户识别为共享账户，无法识别个人。</value></data>
+  <data name="Account" xml:space="preserve"><value>使用的账户</value></data>
+  <data name="Personal" xml:space="preserve"><value>我的账户</value></data>
+  <data name="Shared" xml:space="preserve"><value>共享账户</value></data>
+  <data name="Login" xml:space="preserve"><value>登录并确认</value></data>
+  <data name="User" xml:space="preserve"><value>已登录用户</value></data>
+  <data name="Permissions" xml:space="preserve"><value>使用的权限</value></data>
+  <data name="Approve" xml:space="preserve"><value>允许此应用连接</value></data>
+  <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>如果尚未签发 API 密钥，请先在 </value></data>
+  <data name="MissingAfter" xml:space="preserve"><value> 中签发，然后重试。</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>无法登录。请检查 API 密钥，稍后重试。</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>所选账户没有可用的 API 密钥。请先在 Pleasanter 中签发，然后重新登录。</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>我的 Pleasanter 账户</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>管理员配置的共享 Pleasanter 账户</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Pleasanter API 密钥不可用。</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>请在 Pleasanter 中签发 API 密钥并检查账户状态。</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>MCP 认证包装器尚未配置。</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>管理员需要配置 OAuth 认证和 Pleasanter 连接。</value></data>
+  <data name="Steps" xml:space="preserve">
+    <value>连接步骤</value>
+  </data>
+  <data name="StepLogin" xml:space="preserve">
+    <value>使用 API 密钥登录</value>
+  </data>
+  <data name="StepConsent" xml:space="preserve">
+    <value>确认连接</value>
+  </data>
+  <data name="ShowKey" xml:space="preserve">
+    <value>显示</value>
+  </data>
+  <data name="HideKey" xml:space="preserve">
+    <value>隐藏</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="SecurityNote" xml:space="preserve">
+    <value>包装器不会存储 API 密钥。您可以随时在应用中断开连接。</value>
+  </data>
+</root>
