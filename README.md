@@ -4,7 +4,17 @@ Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth �
 
 ## インストール
 
-Windows または Linux と ASP.NET Core Runtime 10 が必要です。[インストール・設定・起動の手順](_documents/導入手順.md)に従い、検証済みの配布 ZIP を取得してください。
+1. Windows または Linux に [ASP.NET Core Runtime 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) をインストールします。
+2. GitHub にログインし、[Actions の CI](https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper/actions/workflows/ci.yml) で develop の成功した実行から **McpOAuthWrapper** をダウンロードして展開します。
+3. 展開先で次のコマンドを実行し、`http://127.0.0.1:5180/health/live` に `Healthy` が表示されることを確認します。
+
+   ```text
+   dotnet VehicleVision.PleasanterTools.McpOAuthWrapper.dll --urls http://127.0.0.1:5180
+   ```
+
+4. 停止して [導入手順](_documents/導入手順.md) に従い、DB の読み取り専用接続、OAuth クライアント、証明書と公開 HTTPS URL を設定します。設定完了後に `Bridge.Enabled` を `true` にして起動し、AI アプリへ公開 URL の `/mcp` を登録します。
+
+初期設定は接続を無効にしており、起動確認だけでは MCP を利用できません。API キーは先に Pleasanter で発行しておきます。
 
 ## 使い方
 
@@ -28,7 +38,7 @@ Pleasanter のローカル認証が対象です。二段階認証、パスキー
 
 - [管理者向け導入手順](_documents/導入手順.md)
 - [開発者向けガイド](_documents/開発ガイド.md)
-- [Pleasanter 本体](https://github.com/Implem/Implem.Pleasanter)
+- [Pleasanter](https://github.com/Implem/Implem.Pleasanter)
 
 ## ライセンス
 
