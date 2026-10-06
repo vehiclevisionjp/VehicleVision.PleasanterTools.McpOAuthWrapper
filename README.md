@@ -40,6 +40,7 @@ OAuth の状態は SQLite（既定）または Redis／Valkey 互換 KVS に保�
 
 ## 資料
 
+- [Claude・ChatGPT の接続手順](_documents/AIアプリ接続手順.md)
 - [画面と接続の流れ](_documents/利用ガイド.md)
 - [管理者向け導入手順](_documents/導入手順.md)
 - [開発者向けガイド](_documents/開発ガイド.md)
