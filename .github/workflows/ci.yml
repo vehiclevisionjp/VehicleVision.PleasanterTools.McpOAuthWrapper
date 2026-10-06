@@ -33,6 +33,17 @@ jobs:
         run: dotnet build --no-restore -c Release
       - name: テストする
         run: dotnet test --no-build -c Release --logger trx --results-directory TestResults
+      - name: 配布物を作成する
+        id: package
+        shell: pwsh
+        run: ./scripts/package.ps1
+      - name: 配布物を残す
+        uses: actions/upload-artifact@v7
+        with:
+          name: McpOAuthWrapper
+          path: ${{ steps.package.outputs.directory }}/
+          if-no-files-found: error
+          retention-days: 30
       - name: テスト結果を残す
         if: always()
         uses: actions/upload-artifact@v7

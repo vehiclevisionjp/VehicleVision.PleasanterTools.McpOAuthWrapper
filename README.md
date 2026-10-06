@@ -1,51 +1,35 @@
 # VehicleVision.PleasanterTools.McpOAuthWrapper
 
-Pleasanter の MCP サーバーを Claude などへ組織コネクタとして配布するための、薄い OAuth 認証ラッパーです。C#／.NET 10 で開発します。
+Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth で接続するための認証ラッパーです。
 
-**現在は開発環境の叩きです。OAuth 認証・API キーの管理・MCP 中継は未実装で、コネクタとしてはまだ接続できません。**
+## インストール
 
-## 開発を始める
+Windows または Linux と ASP.NET Core Runtime 10 が必要です。[インストール・設定・起動の手順](_documents/導入手順.md)に従い、検証済みの配布 ZIP を取得してください。
 
-.NET 10 SDK と Git を用意します。通常のビルドでは Pleasanter 本体の取得は不要です。
+## 使い方
 
-```powershell
-git clone https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper.git
-cd VehicleVision.PleasanterTools.McpOAuthWrapper
-dotnet restore --locked-mode
-dotnet build --no-restore -c Release
-dotnet test --no-build -c Release
-dotnet run --project src/VehicleVision.PleasanterTools.McpOAuthWrapper --launch-profile http
-```
+1. AI アプリで管理者が用意したコネクタを選びます。接続先はラッパーの `/mcp` です。
+2. ラッパーのログイン画面で Pleasanter のログイン ID とパスワードを入力します。
+3. 自分のアカウントを使うか、管理者が用意した共通アカウントを使うかを選びます。共通アカウントを設定していない場合、選択肢は表示されません。
+4. 接続する AI アプリと使用するアカウントを確認し、利用を許可します。
+5. AI アプリへ戻ると、Pleasanter の MCP 機能を利用できます。
 
-`http://localhost:5154/health/live` は起動確認用です。`/mcp` の GET／POST／DELETE は未実装を示す HTTP 501 を返します。ヘルスチェックの成功はコネクタ対応の完了を示しません。
+ラッパーへ API キーを登録する操作はありません。キーは Pleasanter の Users テーブルから通信のたびに読み取り、ラッパーには保存しません。キーが未発行なら、先に Pleasanter 本体で発行してください。
 
-ソース調査が必要なときに参照用サブモジュールを取得します。
+個人アカウントでは本人の権限、共通アカウントではそのアカウントの権限で処理します。共通アカウントを選んでも、ラッパーへのログインは利用者本人のアカウントで行います。
 
-```powershell
-git submodule update --init --depth 1
-```
+## 現在の対応範囲
 
-## 構成と運用
+OAuth 認可、個人／共通アカウントの選択、MCP の中継を実装した初期版です。**Pleasanter 実機と Claude の組織コネクタを通した接続試験は未実施です。** 初期設定では接続を無効にしています。
 
-- `src/`：ASP.NET Core アプリ
-- `tests/`：HTTP エンドポイントの起動・未実装応答のテスト
-- `_reference/Implem.Pleasanter`：リリースタグへ固定した参照専用サブモジュール
-- `_documents/`：アーキテクチャ方針と開発運用
-- `.github/`：共通エージェント指示、CI、CodeQL、依存監査、PR チェック、参照更新
-- `AGENTS.md`／`CLAUDE.md`：Codex／Claude Code の入口
+Pleasanter のローカル認証が対象です。二段階認証、パスキー、LDAP などを有効にした構成では、この初期版によるログインを提供しません。
 
-開発は `develop`、リリース確定状態は `master` とします。今後の変更は Issue → `develop` から作業ブランチ → Draft PR の流れで進めます。詳細は [開発運用](_documents/開発運用.md) と [アーキテクチャ方針](_documents/アーキテクチャ方針.md) を参照してください。
+## 資料
 
-外部メモリリポジトリは現時点では不要なため作成していません。必要になった場合は `VehicleVision.PleasanterTools.McpOAuthWrapper.ClaudeMemory` を **Internal** で作成し、公開リポジトリに組織情報や秘密を持ち込まない構成にします。
+- [管理者向け導入手順](_documents/導入手順.md)
+- [開発者向けガイド](_documents/開発ガイド.md)
+- [Pleasanter 本体](https://github.com/Implem/Implem.Pleasanter)
 
 ## ライセンス
 
-ラッパーは Pleasanter 本体と同じ **AGPL v3** 系の **AGPL-3.0-or-later** です。[LICENSE](LICENSE) を参照してください。本体のコードは参照専用とし、ラッパーのビルド・配布物には含めません。
-
-## 参考
-
-- [Pleasanter 本体](https://github.com/Implem/Implem.Pleasanter)
-- [運用・Actions の参考リポジトリ](https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Questionnaire)
-- [MCP Authorization 仕様](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)
-
-参照日：2026-10-06。
+AGPL v3（AGPL-3.0-or-later）。[LICENSE](LICENSE) と [NOTICE](NOTICE) を参照してください。
