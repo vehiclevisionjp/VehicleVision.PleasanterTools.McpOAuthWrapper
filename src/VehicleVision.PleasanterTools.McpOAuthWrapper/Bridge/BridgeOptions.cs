@@ -11,6 +11,9 @@ public sealed class BridgeOptions
     public DateTime DatabaseNow => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById(DatabaseTimeZoneId));
     // 共通キーも値は保存せず、Users の所有者 ID だけを設定する。
     public int? SharedApiKeyUserId { get; set; }
+    public string StateStore { get; set; } = "Sqlite";
+    public string KvsConnectionString { get; set; } = "";
+    public string KvsKeyPrefix { get; set; } = "pleasanter-mcp-oauth";
     public string StateDirectory { get; set; } = "App_Data/Wrapper";
     public string SigningCertificatePath { get; set; } = "";
     public string EncryptionCertificatePath { get; set; } = "";

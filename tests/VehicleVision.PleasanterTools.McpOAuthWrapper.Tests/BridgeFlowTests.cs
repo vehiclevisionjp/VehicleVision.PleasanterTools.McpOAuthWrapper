@@ -1,3 +1,4 @@
+using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge.Kvs;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -15,6 +16,98 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 
 public sealed class BridgeFlowTests
 {
+    [KvsFact]
+    public async Task Kvsの別インスタンスと再起動後もトークンを使え失効を共有する()
+    {
+        var prefix = "test-" + Guid.NewGuid().ToString("N");
+        Tokens tokens;
+        using (var first = new BridgeFactory(kvsPrefix: prefix))
+        using (var browser = first.Browser()) tokens = await AuthorizeAsync(browser);
+        using var second = new BridgeFactory(kvsPrefix: prefix);
+        using var secondBrowser = second.Browser();
+        Assert.Equal(HttpStatusCode.OK, (await secondBrowser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode);
+        var refresh = await secondBrowser.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["grant_type"] = "refresh_token", ["client_id"] = "test-client", ["refresh_token"] = tokens.RefreshToken }));
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        using var third = new BridgeFactory(kvsPrefix: prefix);
+        using var thirdBrowser = third.Browser();
+        await thirdBrowser.PostAsync("/connect/revoke", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["client_id"] = "test-client", ["token"] = tokens.AccessToken }));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await secondBrowser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode);
+    }
+
+    [KvsFact]
+    public async Task Kvsの同意は同時に一度だけ消費できログイン試行も共有する()
+    {
+        var prefix = "test-" + Guid.NewGuid().ToString("N");
+        using var first = new BridgeFactory(kvsPrefix: prefix); using var a = first.Browser();
+        using var second = new BridgeFactory(kvsPrefix: prefix); using var b = second.Browser();
+        var left = first.Services.GetRequiredService<IBridgeState>(); var right = second.Services.GetRequiredService<IBridgeState>();
+        await left.CreateConsentAsync("race", CancellationToken.None);
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(i => (i % 2 == 0 ? left : right).ConsumeConsentAsync("race", CancellationToken.None)));
+        Assert.Equal(1, results.Count(x => x));
+        var attempts = await Task.WhenAll(Enumerable.Range(0, 10).Select(i => (i % 2 == 0 ? left : right).TryAttemptAsync("attempt", CancellationToken.None)));
+        Assert.Equal(5, attempts.Count(x => x));
+        await right.ResetAsync("attempt", CancellationToken.None); Assert.True(await left.TryAttemptAsync("attempt", CancellationToken.None));
+    }
+
+    [KvsFact]
+    public async Task Kvsの認可コードを別インスタンスで同時交換しても一度だけ成功する()
+    {
+        var prefix = "test-" + Guid.NewGuid().ToString("N");
+        using var first = new BridgeFactory(kvsPrefix: prefix); using var a = first.Browser();
+        using var second = new BridgeFactory(kvsPrefix: prefix); using var b = second.Browser();
+        var code = await GetCodeAsync(a);
+        var responses = await Task.WhenAll(ExchangeAsync(a, code, Verifier), ExchangeAsync(b, code, Verifier));
+        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.OK));
+        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.BadRequest));
+    }
+
+    [KvsFact]
+    public async Task Kvsは古い版の更新と失効済みトークンの復活を拒否し期限切れを整理する()
+    {
+        using var factory = new BridgeFactory(); using var browser = factory.Browser();
+        var backend = factory.Services.GetRequiredService<KvsBackend>();
+        var token = new KvsToken();
+        KvsBackend.Set(token, "Status", "valid"); KvsBackend.Set(token, "ReferenceId", "prune-reference");
+        KvsBackend.Set(token, "CreationDate", DateTimeOffset.UtcNow.AddDays(-2));
+        KvsBackend.Set(token, "ExpirationDate", DateTimeOffset.UtcNow.AddDays(-1));
+        await backend.SaveAsync(token, true, CancellationToken.None);
+        var old = await backend.ReadAsync<KvsToken>(token.Id, CancellationToken.None);
+        KvsBackend.Set(token, "Status", "revoked"); await backend.SaveAsync(token, false, CancellationToken.None);
+        await Assert.ThrowsAsync<OpenIddict.Abstractions.OpenIddictExceptions.ConcurrencyException>(() => backend.SaveAsync(old!, false, CancellationToken.None));
+        var latest = await backend.ReadAsync<KvsToken>(token.Id, CancellationToken.None);
+        KvsBackend.Set(latest!, "Status", "valid");
+        await Assert.ThrowsAsync<OpenIddict.Abstractions.OpenIddictExceptions.ConcurrencyException>(() => backend.SaveAsync(latest!, false, CancellationToken.None));
+        Assert.Equal(1, await new KvsTokenStore(backend).PruneAsync(DateTimeOffset.UtcNow.AddDays(-1), CancellationToken.None));
+        Assert.Null(await backend.IndexedAsync<KvsToken>("prune-reference", CancellationToken.None));
+    }
+    [KvsFact]
+    public async Task Kvsのクライアント識別子は重複せず削除は関連する認可とトークンを原子的に消す()
+    {
+        using var factory=new BridgeFactory();using var browser=factory.Browser();
+        var backend=factory.Services.GetRequiredService<KvsBackend>();
+        var app=new KvsApplication();KvsBackend.Set(app,"ClientId","cascade-client");
+        await backend.SaveAsync(app,true,CancellationToken.None);
+        var duplicate=new KvsApplication();KvsBackend.Set(duplicate,"ClientId","cascade-client");
+        await Assert.ThrowsAsync<OpenIddict.Abstractions.OpenIddictExceptions.ConcurrencyException>(()=>backend.SaveAsync(duplicate,true,CancellationToken.None));
+        var auth=new KvsAuthorization();KvsBackend.Set(auth,"ApplicationId",app.Id);
+        await backend.SaveAsync(auth,true,CancellationToken.None);
+        var token=new KvsToken();KvsBackend.Set(token,"ApplicationId",app.Id);KvsBackend.Set(token,"AuthorizationId",auth.Id);KvsBackend.Set(token,"ReferenceId","cascade-reference");
+        await backend.SaveAsync(token,true,CancellationToken.None);
+        await backend.DeleteAsync(app,CancellationToken.None);
+        Assert.Null(await backend.IndexedAsync<KvsApplication>("cascade-client",CancellationToken.None));
+        Assert.Null(await backend.ReadAsync<KvsAuthorization>(auth.Id,CancellationToken.None));
+        Assert.Null(await backend.IndexedAsync<KvsToken>("cascade-reference",CancellationToken.None));
+        Assert.Null(await backend.ReadAsync<KvsToken>(token.Id,CancellationToken.None));
+    }
+    private sealed class KvsFactAttribute : FactAttribute
+    {
+        public KvsFactAttribute()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION"))) Skip = "KVS 実機試験の接続先が未設定です。";
+        }
+    }
     [Fact]
     public async Task 同意画面は検証済み戻り先へのフォーム転送だけを許可する()
     {
@@ -190,11 +283,19 @@ public sealed class BridgeFlowTests
     {
         using var factory = new BridgeFactory(dynamicRegistration: true);
         using var browser = factory.Browser();
-        var invalid = await browser.PostAsJsonAsync("/connect/register", new { client_name = "Client",
-            redirect_uris = new[] { "https://evil.example/callback" }, token_endpoint_auth_method = "none" });
+        var invalid = await browser.PostAsJsonAsync("/connect/register", new
+        {
+            client_name = "Client",
+            redirect_uris = new[] { "https://evil.example/callback" },
+            token_endpoint_auth_method = "none"
+        });
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-        var valid = await browser.PostAsJsonAsync("/connect/register", new { client_name = "Client",
-            redirect_uris = new[] { Callback }, token_endpoint_auth_method = "none" });
+        var valid = await browser.PostAsJsonAsync("/connect/register", new
+        {
+            client_name = "Client",
+            redirect_uris = new[] { Callback },
+            token_endpoint_auth_method = "none"
+        });
         Assert.Equal(HttpStatusCode.Created, valid.StatusCode);
         var json = await valid.Content.ReadFromJsonAsync<JsonElement>();
         Assert.False(string.IsNullOrEmpty(json.GetProperty("client_id").GetString()));
@@ -255,6 +356,18 @@ public sealed class BridgeFlowTests
         using var next = McpRequest(tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Unauthorized, (await browser.SendAsync(next)).StatusCode);
         Assert.Single(factory.Upstream.Keys);
+        if (factory.IsKvs)
+        {
+            var backend = factory.Services.GetRequiredService<KvsBackend>();
+            foreach (var collection in new[] { "KvsApplication", "KvsAuthorization", "KvsScope", "KvsToken", "keys" })
+            {
+                string persisted = collection == "keys" ? string.Join("", await backend.Database.ListRangeAsync(backend.Key(collection))) : string.Join("", (await backend.Database.HashGetAllAsync(backend.Key(collection))).Select(x => x.Value.ToString()));
+                Assert.DoesNotContain("original-key", persisted); Assert.DoesNotContain("rotated-key", persisted);
+            }
+            Assert.False(File.Exists(Path.Combine(factory.Root, "state", "oauth.db")));
+            Assert.False(Directory.Exists(Path.Combine(factory.Root, "state", "keys")));
+            return;
+        }
         using var db = new SqliteConnection($"Data Source={Path.Combine(factory.Root, "state", "oauth.db")}");
         await db.OpenAsync();
         using var cmd = db.CreateCommand();
@@ -324,7 +437,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var noCsrf = await browser.PostAsync("/account/login", new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" }));
+        { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" }));
         Assert.Equal(HttpStatusCode.BadRequest, noCsrf.StatusCode);
         var login = await browser.GetStringAsync(url);
         var consentResponse = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
@@ -348,8 +461,12 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = decision,
-            ["loginId"] = "apikey", ["password"] = "wrong" });
+        var response = await PostAsync(browser, url, page, new()
+        {
+            ["decision"] = decision,
+            ["loginId"] = "apikey",
+            ["password"] = "wrong"
+        });
         Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
         Assert.DoesNotContain("code=", response.Headers.Location?.Query ?? "");
     }
@@ -396,8 +513,12 @@ public sealed class BridgeFlowTests
         Assert.Equal(HttpStatusCode.BadRequest, (await browser.GetAsync("/mcp?access_token=" + tokens.AccessToken)).StatusCode);
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var injected = await PostAsync(browser, url, page, new() { ["decision"] = "login",
-            ["loginId"] = "alice' OR 1=1 --", ["password"] = "original-key" });
+        var injected = await PostAsync(browser, url, page, new()
+        {
+            ["decision"] = "login",
+            ["loginId"] = "alice' OR 1=1 --",
+            ["password"] = "original-key"
+        });
         Assert.DoesNotContain("name=\"ticket\"", await injected.Content.ReadAsStringAsync());
         Assert.Empty(factory.Upstream.Keys);
     }
@@ -473,11 +594,19 @@ public sealed class BridgeFlowTests
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
         Assert.Contains("value=\"connector\"", page);
-        var rejected = await PostAsync(browser, url, page, new() { ["decision"] = "login",
-            ["loginId"] = "apikey", ["password"] = "original-key" });
+        var rejected = await PostAsync(browser, url, page, new()
+        {
+            ["decision"] = "login",
+            ["loginId"] = "apikey",
+            ["password"] = "original-key"
+        });
         Assert.DoesNotContain("name=\"ticket\"", await rejected.Content.ReadAsStringAsync());
-        var accepted = await PostAsync(browser, url, page, new() { ["decision"] = "login",
-            ["loginId"] = "connector", ["password"] = "original-key" });
+        var accepted = await PostAsync(browser, url, page, new()
+        {
+            ["decision"] = "login",
+            ["loginId"] = "connector",
+            ["password"] = "original-key"
+        });
         var html = await accepted.Content.ReadAsStringAsync();
         Assert.Contains("name=\"ticket\"", html);
         Assert.DoesNotContain("original-key", html);
@@ -508,8 +637,13 @@ public sealed class BridgeFlowTests
     {
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey",
-            ["password"] = loginId == "bob" ? "bob-key" : loginId == "shared" ? "shared-key" : "original-key", ["keyMode"] = shared ? "shared" : "personal" });
+        var loggedIn = await PostAsync(browser, url, page, new()
+        {
+            ["decision"] = "login",
+            ["loginId"] = "apikey",
+            ["password"] = loginId == "bob" ? "bob-key" : loginId == "shared" ? "shared-key" : "original-key",
+            ["keyMode"] = shared ? "shared" : "personal"
+        });
         var consent = await loggedIn.Content.ReadAsStringAsync();
         var approval = await PostAsync(browser, url, consent, new() { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") });
         Assert.Equal(HttpStatusCode.Redirect, approval.StatusCode);
@@ -521,8 +655,14 @@ public sealed class BridgeFlowTests
     }
     private static Task<HttpResponseMessage> ExchangeAsync(HttpClient client, string code, string verifier) =>
         client.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
-        { ["grant_type"] = "authorization_code", ["client_id"] = "test-client", ["code"] = code,
-            ["redirect_uri"] = Callback, ["code_verifier"] = verifier, ["resource"] = "http://localhost/mcp" }));
+        {
+            ["grant_type"] = "authorization_code",
+            ["client_id"] = "test-client",
+            ["code"] = code,
+            ["redirect_uri"] = Callback,
+            ["code_verifier"] = verifier,
+            ["resource"] = "http://localhost/mcp"
+        }));
     private static async Task<Tokens> AuthorizeAsync(HttpClient browser, bool shared = false, string loginId = "alice")
     {
         var code = await GetCodeAsync(browser, shared, loginId);
@@ -545,14 +685,17 @@ public sealed class BridgeFlowTests
     {
         public string Root { get; } = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
         public UpstreamHandler Upstream { get; } = new();
+        public bool IsKvs => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION"));
+        public string KvsPrefix { get; }
         private readonly bool _shared;
         private readonly bool _dynamicRegistration;
         private readonly string _apiKeyLoginId;
         private readonly string _issuer;
         private readonly string _upstream;
         public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
-            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey")
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey", string? kvsPrefix = null)
         {
+            KvsPrefix = kvsPrefix ?? "test-" + Guid.NewGuid().ToString("N");
             _shared = shared;
             _dynamicRegistration = dynamicRegistration;
             _apiKeyLoginId = apiKeyLoginId;
@@ -562,10 +705,19 @@ public sealed class BridgeFlowTests
             var parameters = Path.Combine(Root, "App_Data", "Parameters");
             File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(new BridgeOptions
             {
-                Enabled = true, ApiKeyLoginId = _apiKeyLoginId, Issuer = _issuer, PleasanterUrl = _upstream, AllowDevelopmentHttp = true,
-                StateDirectory = Path.Combine(Root, "state"), SharedApiKeyUserId = _shared ? 2 : null,
+                Enabled = true,
+                ApiKeyLoginId = _apiKeyLoginId,
+                Issuer = _issuer,
+                PleasanterUrl = _upstream,
+                AllowDevelopmentHttp = true,
+                StateStore = IsKvs ? "Redis" : "Sqlite",
+                KvsConnectionString = Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION") ?? "",
+                KvsKeyPrefix = KvsPrefix,
+                StateDirectory = Path.Combine(Root, "state"),
+                SharedApiKeyUserId = _shared ? 2 : null,
                 Clients = [new OAuthClient { ClientId = "test-client", DisplayName = "Test Client", RedirectUris = [Callback] }],
-                AllowDynamicClientRegistration = _dynamicRegistration, AllowedRedirectUris = [Callback]
+                AllowDynamicClientRegistration = _dynamicRegistration,
+                AllowedRedirectUris = [Callback]
             }));
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");
             using var connection = UsersConnection();
@@ -595,7 +747,7 @@ public sealed class BridgeFlowTests
             });
         }
         public HttpClient Browser() => CreateClient(new WebApplicationFactoryClientOptions
-            { BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false, HandleCookies = true });
+        { BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false, HandleCookies = true });
         public SqliteConnection UsersConnection() => new($"Data Source={Path.Combine(Root, "users.db")}");
         public void ChangeUser(string column, string value, int userId = 1)
         {

@@ -4,18 +4,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 
-public sealed class LoginGuard(IDbContextFactory<OAuthState> factory)
+public sealed class SqliteBridgeState(IDbContextFactory<OAuthState> factory) : IBridgeState
 {
     private readonly SemaphoreSlim _gate = new(1);
 
     // 失敗回数を OAuth 用 DB に保持し、再起動や IP の変更でも制限を維持する。
-    public async Task<bool> TryAttemptAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null)
+    public async Task<bool> TryAttemptAsync(string id, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
-            var id = Key(tenantId, loginId, userId);
+
             var now = DateTime.UtcNow;
             await db.LoginAttempts.Where(x => x.WindowStart < now.AddMinutes(-15)).ExecuteDeleteAsync(cancellationToken);
             var attempt = await db.LoginAttempts.FindAsync([id], cancellationToken);
@@ -37,18 +37,42 @@ public sealed class LoginGuard(IDbContextFactory<OAuthState> factory)
         finally { _gate.Release(); }
     }
 
-    public async Task ResetAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null)
+    public async Task ResetAsync(string id, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
-            await db.LoginAttempts.Where(x => x.Id == Key(tenantId, loginId, userId)).ExecuteDeleteAsync(cancellationToken);
+            await db.LoginAttempts.Where(x => x.Id == id).ExecuteDeleteAsync(cancellationToken);
         }
         finally { _gate.Release(); }
     }
 
-    private static string Key(int tenantId, string loginId, int? userId) => Convert.ToHexString(
-        SHA256.HashData(Encoding.UTF8.GetBytes($"{tenantId}:" +
-            (userId.HasValue ? $"user:{userId.Value}" : $"login:{loginId.ToUpperInvariant()}"))));
+    public async Task CreateConsentAsync(string id, CancellationToken ct)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        await db.PendingConsents.Where(x => x.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync(ct);
+        db.Add(new PendingConsent { Id = id, ExpiresAt = DateTime.UtcNow.AddMinutes(5) });
+        await db.SaveChangesAsync(ct);
+    }
+    public async Task<bool> ConsumeConsentAsync(string id, CancellationToken ct)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        return await db.PendingConsents.Where(x => x.Id == id && x.ExpiresAt > DateTime.UtcNow).ExecuteDeleteAsync(ct) == 1;
+    }
+}
+
+public interface IBridgeState
+{
+    Task<bool> TryAttemptAsync(string id, CancellationToken ct);
+    Task ResetAsync(string id, CancellationToken ct);
+    Task CreateConsentAsync(string id, CancellationToken ct);
+    Task<bool> ConsumeConsentAsync(string id, CancellationToken ct);
+}
+
+public sealed class LoginGuard(IBridgeState state)
+{
+    public Task<bool> TryAttemptAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null) => state.TryAttemptAsync(Key(tenantId, loginId, userId), cancellationToken);
+    public Task ResetAsync(int tenantId, string loginId, CancellationToken cancellationToken, int? userId = null) => state.ResetAsync(Key(tenantId, loginId, userId), cancellationToken);
+    private static string Key(int tenantId, string loginId, int? userId) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{tenantId}:" + (userId.HasValue ? $"user:{userId.Value}" : $"login:{loginId.ToUpperInvariant()}"))));
 }

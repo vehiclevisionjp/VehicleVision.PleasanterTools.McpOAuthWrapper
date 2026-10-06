@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
@@ -22,7 +21,7 @@ public sealed record ConsentView(string ClientName, string RedirectUri, string A
 [EnableRateLimiting("oauth")]
 [RequestSizeLimit(16384)]
 public sealed class AuthorizationController(BridgeOptions options, IPleasanterUserStore users,
-    IOpenIddictApplicationManager applications, LoginGuard guard, OAuthState db, IDataProtectionProvider protection,
+    IOpenIddictApplicationManager applications, LoginGuard guard, IBridgeState state, IDataProtectionProvider protection,
     Microsoft.Extensions.Localization.IStringLocalizer<UiText> text)
     : Controller
 {
@@ -40,9 +39,8 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
             var identity = Unprotect<ApprovedIdentity>(approval);
             if (identity is null || identity.RequestHash != Hash(Request.QueryString.Value ?? "") || identity.TenantId != options.TenantId)
                 return Reject(Errors.AccessDenied);
-            var consumed = await db.PendingConsents.Where(x => x.Id == identity.Nonce && x.ExpiresAt > DateTime.UtcNow)
-                .ExecuteDeleteAsync(cancellationToken);
-            if (consumed != 1) return Reject(Errors.AccessDenied);
+            var consumed = await state.ConsumeConsentAsync(identity.Nonce, cancellationToken);
+            if (!consumed) return Reject(Errors.AccessDenied);
             var user = await users.FindByIdAsync(identity.TenantId, identity.UserId, cancellationToken);
             if (user is null || !user.CanUseApi(options.DatabaseNow) || McpProxy.Stamp(user.ApiKey) != identity.ApiKeyStamp
                 || !await HasKeyAsync(user, identity.KeyOwnerId, cancellationToken, identity.KeyOwnerStamp)) return Reject(Errors.AccessDenied);
@@ -90,9 +88,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
             return View("Consent", ViewFor(info,
                 text["MissingKey"].Value));
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-        await db.PendingConsents.Where(x => x.ExpiresAt < DateTime.UtcNow).ExecuteDeleteAsync(cancellationToken);
-        db.Add(new PendingConsent { Id = nonce, ExpiresAt = DateTime.UtcNow.AddMinutes(5) });
-        await db.SaveChangesAsync(cancellationToken);
+        await state.CreateConsentAsync(nonce, cancellationToken);
         var approved = new ApprovedIdentity(authenticated.TenantId, authenticated.UserId, ownerId,
             McpProxy.Stamp(authenticated.ApiKey), McpProxy.Stamp(owner.ApiKey), Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query), nonce);
         return View("Consent", ViewFor(info) with
@@ -113,7 +109,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         if (identity.RequestHash != Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query)) return BadRequest();
         if (decision != "approve")
         {
-            await db.PendingConsents.Where(x => x.Id == identity.Nonce).ExecuteDeleteAsync(cancellationToken);
+            await state.ConsumeConsentAsync(identity.Nonce, cancellationToken);
             return Denied(info);
         }
         Response.Cookies.Append(ApprovalCookie, ticket!, CookieOptions());
