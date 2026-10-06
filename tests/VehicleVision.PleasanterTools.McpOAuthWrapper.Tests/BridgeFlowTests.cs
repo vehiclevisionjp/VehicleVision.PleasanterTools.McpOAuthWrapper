@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
@@ -16,6 +15,37 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 
 public sealed class BridgeFlowTests
 {
+    [Theory]
+    [InlineData("http://localhost", "http://localhost/pleasanter")]
+    [InlineData("http://localhost/", "http://localhost/pleasanter")]
+    [InlineData("http://localhost", "http://localhost/pleasanter/")]
+    public async Task 接続URLの末尾スラッシュ省略でも認可とサブパスへのMCP中継が動く(string issuer, string upstream)
+    {
+        using var factory = new BridgeFactory(issuer: issuer, upstream: upstream);
+        using var browser = factory.Browser();
+        var discovery = await browser.GetFromJsonAsync<JsonElement>("/.well-known/oauth-authorization-server");
+        Assert.Equal("http://localhost/", discovery.GetProperty("issuer").GetString());
+        Assert.Equal("http://localhost/connect/token", discovery.GetProperty("token_endpoint").GetString());
+        var tokens = await AuthorizeAsync(browser);
+        using var request = McpRequest(tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(request)).StatusCode);
+        Assert.Single(factory.Upstream.Keys);
+        // 補完対象外の redirect URI は、末尾 / を足しても一致しない。
+        var changedRedirect = AuthorizationUrl().Replace(Uri.EscapeDataString(Callback), Uri.EscapeDataString(Callback + "/"));
+        Assert.Equal(HttpStatusCode.BadRequest, (await browser.GetAsync(changedRedirect)).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("http://localhost/subpath", "http://localhost/pleasanter")]
+    [InlineData("http://localhost?query=1", "http://localhost/pleasanter")]
+    [InlineData("http://localhost", "http://localhost/pleasanter?query=1")]
+    [InlineData("http://localhost", "http://localhost/pleasanter#fragment")]
+    public void 末尾補完でも不正な接続URLは起動を拒否する(string issuer, string upstream)
+    {
+        using var factory = new BridgeFactory(issuer: issuer, upstream: upstream);
+        Assert.Throws<InvalidOperationException>(() => factory.Browser());
+    }
+
     [Fact]
     public async Task 動的登録は許可一覧のredirectだけを登録し利用者トークンは発行しない()
     {
@@ -378,12 +408,24 @@ public sealed class BridgeFlowTests
         public UpstreamHandler Upstream { get; } = new();
         private readonly bool _shared;
         private readonly bool _dynamicRegistration;
-        public BridgeFactory(bool shared = false, bool dynamicRegistration = false)
+        private readonly string _issuer;
+        private readonly string _upstream;
+        public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/")
         {
             _shared = shared;
             _dynamicRegistration = dynamicRegistration;
+            _issuer = issuer;
+            _upstream = upstream;
             Directory.CreateDirectory(Path.Combine(Root, "App_Data", "Parameters"));
             var parameters = Path.Combine(Root, "App_Data", "Parameters");
+            File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(new BridgeOptions
+            {
+                Enabled = true, Issuer = _issuer, PleasanterUrl = _upstream, AllowDevelopmentHttp = true,
+                StateDirectory = Path.Combine(Root, "state"), SharedApiKeyUserId = _shared ? 2 : null,
+                Clients = [new OAuthClient { ClientId = "test-client", DisplayName = "Test Client", RedirectUris = [Callback] }],
+                AllowDynamicClientRegistration = _dynamicRegistration, AllowedRedirectUris = [Callback]
+            }));
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");
             File.WriteAllText(Path.Combine(parameters, "Authentication.json"), "{\"Provider\":\"Local\"}");
             File.WriteAllText(Path.Combine(parameters, "Security.json"), "{\"SecondaryAuthentication\":{\"Mode\":\"None\"}}");
@@ -405,25 +447,6 @@ public sealed class BridgeFlowTests
         {
             builder.UseEnvironment("Development").UseContentRoot(Root);
             builder.UseSetting("Logging:LogLevel:Default", "Error");
-            builder.UseSetting("Bridge:Enabled", "true");
-            builder.UseSetting("Bridge:Issuer", "http://localhost/");
-            builder.UseSetting("Bridge:PleasanterUrl", "http://localhost/pleasanter/");
-            builder.UseSetting("Bridge:AllowDevelopmentHttp", "true");
-            builder.UseSetting("Bridge:StateDirectory", Path.Combine(Root, "state"));
-            builder.UseSetting("Bridge:SharedApiKeyUserId", _shared ? "2" : "");
-            builder.UseSetting("Bridge:Clients:0:ClientId", "test-client");
-            builder.UseSetting("Bridge:Clients:0:DisplayName", "Test Client");
-            builder.UseSetting("Bridge:Clients:0:RedirectUris:0", Callback);
-            builder.UseSetting("Bridge:AllowDynamicClientRegistration", _dynamicRegistration.ToString());
-            builder.UseSetting("Bridge:AllowedRedirectUris:0", Callback);
-            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Bridge:Enabled"] = "true", ["Bridge:Issuer"] = "http://localhost/", ["Bridge:PleasanterUrl"] = "http://localhost/pleasanter/",
-                ["Bridge:AllowDevelopmentHttp"] = "true", ["Bridge:StateDirectory"] = Path.Combine(Root, "state"),
-                ["Bridge:SharedApiKeyUserId"] = _shared ? "2" : null,
-                ["Bridge:Clients:0:ClientId"] = "test-client", ["Bridge:Clients:0:DisplayName"] = "Test Client",
-                ["Bridge:Clients:0:RedirectUris:0"] = Callback
-            }));
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IPleasanterConnectionFactory>();

@@ -17,6 +17,7 @@ temp/
 *.pem
 *.key
 **/App_Data/Parameters/Rds.json
+**/App_Data/Parameters/General.json
 **/App_Data/Parameters/Authentication.json
 **/App_Data/Parameters/Security.json
 **/App_Data/Wrapper/

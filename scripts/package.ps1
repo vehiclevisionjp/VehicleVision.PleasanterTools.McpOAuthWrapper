@@ -11,7 +11,7 @@ foreach ($file in @('LICENSE', 'NOTICE', 'README.md')) {
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot '_documents') -Destination $appDirectory -Recurse
 $forbidden = Get-ChildItem -LiteralPath $appDirectory -Recurse -File | Where-Object {
-    $_.Name -in @('Rds.json', 'Authentication.json', 'Security.json', 'appsettings.Local.json', 'oauth.db') -or
+    $_.Name -in @('General.json', 'Rds.json', 'Authentication.json', 'Security.json', 'appsettings.Local.json', 'oauth.db') -or
     $_.Extension -in @('.pfx', '.pem', '.key') -or $_.FullName -match '[/\\]_reference[/\\]|[/\\]App_Data[/\\]Wrapper[/\\]'
 }
 if ($forbidden) { throw '配布対象外の設定・秘密・参照ソースが検出されました。' }

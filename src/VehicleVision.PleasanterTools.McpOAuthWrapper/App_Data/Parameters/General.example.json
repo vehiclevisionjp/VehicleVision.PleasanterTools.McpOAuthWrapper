@@ -1,0 +1,17 @@
+{
+  "Enabled": false,
+  "Issuer": "https://localhost:7042/",
+  "PleasanterUrl": "https://localhost/",
+  "TenantId": 1,
+  "DatabaseTimeZoneId": "UTC",
+  "SharedApiKeyUserId": null,
+  "StateDirectory": "App_Data/Wrapper",
+  "AllowDevelopmentHttp": false,
+  "TrustedProxyAddresses": [],
+  "AllowedOrigins": [],
+  "SigningCertificatePath": "",
+  "EncryptionCertificatePath": "",
+  "Clients": [],
+  "AllowDynamicClientRegistration": false,
+  "AllowedRedirectUris": []
+}

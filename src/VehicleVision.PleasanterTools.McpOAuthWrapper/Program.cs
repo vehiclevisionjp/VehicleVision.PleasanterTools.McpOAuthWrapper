@@ -4,7 +4,10 @@ using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
-var bridge = builder.Configuration.GetSection("Bridge").Get<BridgeOptions>() ?? new();
+var general = new ConfigurationBuilder().SetBasePath(builder.Environment.ContentRootPath)
+    .AddJsonFile("App_Data/Parameters/General.json", optional: true)
+    .AddEnvironmentVariables("MCP_GENERAL_").Build();
+var bridge = general.Get<BridgeOptions>() ?? new();
 if (bridge.Enabled) builder.AddBridge(bridge);
 
 var app = builder.Build();
