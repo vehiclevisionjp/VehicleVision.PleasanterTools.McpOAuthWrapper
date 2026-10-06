@@ -48,7 +48,7 @@ public sealed class PleasanterConnectionFactory(RdsOptions options) : IPleasante
 
     private SqlConnection CreateSqlServer()
     {
-        var builder = new SqlConnectionStringBuilder(options.UserConnectionString);
+        var builder = new SqlConnectionStringBuilder { ConnectionString = options.UserConnectionString };
         // Strict の指定は維持し、それ以外は暗号化を必須にする。
         if (builder.Encrypt != SqlConnectionEncryptOption.Strict) builder.Encrypt = true;
         return new SqlConnection(builder.ConnectionString);
