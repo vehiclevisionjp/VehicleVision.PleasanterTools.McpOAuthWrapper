@@ -48,7 +48,11 @@ public sealed class BridgeFlowTests
         Assert.Equal(1, results.Count(x => x));
         var attempts = await Task.WhenAll(Enumerable.Range(0, 10).Select(i => (i % 2 == 0 ? left : right).TryAttemptAsync("attempt", CancellationToken.None)));
         Assert.Equal(5, attempts.Count(x => x));
-        await right.ResetAsync("attempt", CancellationToken.None); Assert.True(await left.TryAttemptAsync("attempt", CancellationToken.None));
+        // 成功した試行を戻しても、過去の失敗は残る。
+        for (var i = 0; i < 5; i++) Assert.True(await left.TryAttemptAsync("release", CancellationToken.None));
+        await right.ReleaseAsync("release", CancellationToken.None);
+        Assert.True(await left.TryAttemptAsync("release", CancellationToken.None));
+        Assert.False(await right.TryAttemptAsync("release", CancellationToken.None));
     }
 
     [KvsFact]
@@ -302,6 +306,37 @@ public sealed class BridgeFlowTests
         Assert.False(json.TryGetProperty("access_token", out _));
         Assert.False(valid.Headers.Contains("Set-Cookie"));
         Assert.Equal(HttpStatusCode.Unauthorized, (await browser.PostAsync("/mcp", new StringContent("{}"))).StatusCode);
+    }
+
+    [Fact]
+    public async Task 動的登録は同じ内容なら同じクライアントを返し上限を超えると拒否する()
+    {
+        using var factory = new BridgeFactory(dynamicRegistration: true, maxDynamicClients: 1);
+        using var browser = factory.Browser();
+        async Task<HttpResponseMessage> Register(string name) => await browser.PostAsJsonAsync("/connect/register", new
+        {
+            client_name = name,
+            redirect_uris = new[] { Callback },
+            token_endpoint_auth_method = "none"
+        });
+        var first = await Register("Client");
+        var again = await Register("Client");
+        Assert.Equal(HttpStatusCode.Created, again.StatusCode);
+        Assert.Equal((await first.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString(),
+            (await again.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("client_id").GetString());
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await Register("Another")).StatusCode);
+    }
+
+    [Fact]
+    public async Task ログイン成功で戻すのは1回分だけで過去の失敗は残る()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var state = factory.Services.GetRequiredService<IBridgeState>();
+        for (var i = 0; i < 5; i++) Assert.True(await state.TryAttemptAsync("release", CancellationToken.None));
+        await state.ReleaseAsync("release", CancellationToken.None);
+        Assert.True(await state.TryAttemptAsync("release", CancellationToken.None));
+        Assert.False(await state.TryAttemptAsync("release", CancellationToken.None));
     }
 
     [Fact]
@@ -693,7 +728,7 @@ public sealed class BridgeFlowTests
         private readonly string _issuer;
         private readonly string _upstream;
         public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
-            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey", string? kvsPrefix = null)
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey", string? kvsPrefix = null, int maxDynamicClients = 100)
         {
             KvsPrefix = kvsPrefix ?? "test-" + Guid.NewGuid().ToString("N");
             _shared = shared;
@@ -717,6 +752,7 @@ public sealed class BridgeFlowTests
                 SharedApiKeyUserId = _shared ? 2 : null,
                 Clients = [new OAuthClient { ClientId = "test-client", DisplayName = "Test Client", RedirectUris = [Callback] }],
                 AllowDynamicClientRegistration = _dynamicRegistration,
+                MaxDynamicClients = maxDynamicClients,
                 AllowedRedirectUris = [Callback]
             }));
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");

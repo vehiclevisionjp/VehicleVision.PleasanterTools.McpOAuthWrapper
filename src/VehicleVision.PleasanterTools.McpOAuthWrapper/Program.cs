@@ -35,8 +35,13 @@ else
 {
     await app.InitializeBridgeAsync(bridge);
     if (bridge.TrustedProxyAddresses.Count > 0) app.UseForwardedHeaders();
+    var proxyWarned = 0;
     app.Use(async (context, next) =>
     {
+        // 転送ヘッダーが処理されずに届く場合、全クライアントが同じ接続元に見えて試行制限を共有してしまう。
+        if (context.Request.Headers.ContainsKey("X-Forwarded-For") && Interlocked.Exchange(ref proxyWarned, 1) == 0)
+            app.Logger.LogWarning("転送ヘッダーを受信しましたが、信頼できる接続元として処理されていません。"
+                + "プロキシ配下では TrustedProxyAddresses を設定してください。未設定では全利用者が同じ接続元として扱われ、ログイン試行制限を共有します。");
         // 外部から与えられた Host で OAuth の URL を構成しない。
         var issuer = new Uri(bridge.Issuer);
         if (context.Request.Path == "/mcp" && context.Request.Query.ContainsKey("access_token"))
