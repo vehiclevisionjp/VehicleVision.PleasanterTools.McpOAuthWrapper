@@ -2,6 +2,10 @@
 
 Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth で接続するための認証ラッパーです。
 
+## インストール
+
+Windows または Linux と ASP.NET Core Runtime 10 が必要です。[インストール・設定・起動の手順](_documents/導入手順.md)に従い、検証済みの配布 ZIP を取得してください。
+
 ## 使い方
 
 1. AI アプリで管理者が用意したコネクタを選びます。接続先はラッパーの `/mcp` です。
