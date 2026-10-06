@@ -30,12 +30,15 @@ API キーは接続時の認証に使い、ラッパーには保存しません�
 
 ## 現在の対応範囲
 
-OAuth 認可、個人／共通アカウントの選択、MCP の中継を実装した初期版です。**Pleasanter 実機と Claude の組織コネクタを通した接続試験は未実施です。** 初期設定では接続を無効にしています。
+OAuth 認可、個人／共通アカウントの選択、MCP の中継を実装した初期版です。Docker 上の Pleasanter 1.5.8.1／PostgreSQL 17 で OAuth 認可と MCP 接続を確認しています。Claude の組織コネクタ、SQL Server・MySQL、Azure App Service・IIS の実機確認は未実施です。 初期設定では接続を無効にしています。
 
 API キーを持っていることを認証根拠とします。Pleasanter のログインパスワードは使いません。LDAP・パスキー・二段階認証を使用する環境でも、Pleasanter で発行済みの API キーを使う方式です。ラッパーがそれらのログイン処理を実行したり、完了した証明を受け取ったりするものではありません。
 
+画面は日本語・英語・中国語・ドイツ語・韓国語・スペイン語・ベトナム語に対応します。
+
 ## 資料
 
+- [画面と接続の流れ](_documents/利用ガイド.md)
 - [管理者向け導入手順](_documents/導入手順.md)
 - [開発者向けガイド](_documents/開発ガイド.md)
 - [Pleasanter](https://github.com/Implem/Implem.Pleasanter)
