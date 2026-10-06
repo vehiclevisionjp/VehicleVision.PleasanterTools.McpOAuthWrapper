@@ -21,14 +21,15 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
         if (!TryIdentity(context.User, out var tenantId, out var userId, out var ownerId) || tenantId != options.TenantId)
         { context.Response.StatusCode = 401; return; }
         var user = await users.FindByIdAsync(tenantId, userId, cancellationToken);
-        if (user is null || !user.CanSignIn(options.DatabaseNow)
-            || Stamp(user.PasswordHash) != context.User.FindFirstValue("password_stamp"))
+        if (user is null || !user.CanUseApi(options.DatabaseNow)
+            || Stamp(user.ApiKey) != context.User.FindFirstValue("api_key_stamp"))
         { context.Response.StatusCode = 401; return; }
         if (ownerId != userId && ownerId != options.SharedApiKeyUserId)
         { context.Response.StatusCode = 403; return; }
         // 毎回 DB の最新値を読む。OAuth DB、トークン、セッションに API キーを格納しない。
         var owner = ownerId == userId ? user : await users.FindByIdAsync(tenantId, ownerId, cancellationToken);
-        if (owner is null || owner.Disabled || owner.Lockout || string.IsNullOrWhiteSpace(owner.ApiKey))
+        if (owner is null || !owner.CanUseApi(options.DatabaseNow) || string.IsNullOrWhiteSpace(owner.ApiKey)
+            || Stamp(owner.ApiKey) != context.User.FindFirstValue("key_owner_stamp"))
         {
             await Results.Problem(statusCode: 403, title: "Pleasanter の API キーを利用できません。",
                 detail: "Pleasanter 本体で API キーを発行し、アカウントの状態を確認してください。").ExecuteAsync(context);

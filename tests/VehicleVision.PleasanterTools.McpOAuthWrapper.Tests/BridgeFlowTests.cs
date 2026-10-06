@@ -16,6 +16,92 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 public sealed class BridgeFlowTests
 {
     [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 1)]
+    [InlineData(true, 2)]
+    public async Task 認証キーと共通キーの再発行はアクセスと更新トークンを拒否する(bool shared, int ownerId)
+    {
+        using var factory = new BridgeFactory(shared: shared);
+        using var browser = factory.Browser();
+        var tokens = await AuthorizeAsync(browser, shared: shared);
+        factory.ChangeUser("ApiKey", "replacement-key", ownerId);
+        using var request = McpRequest(tokens.AccessToken);
+        Assert.True((await browser.SendAsync(request)).StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden);
+        var refresh = await browser.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["grant_type"] = "refresh_token", ["client_id"] = "test-client", ["refresh_token"] = tokens.RefreshToken }));
+        Assert.Equal(HttpStatusCode.BadRequest, refresh.StatusCode);
+        Assert.Empty(factory.Upstream.Keys);
+    }
+
+    [Fact]
+    public async Task 認可コード発行後のキー再発行ではトークンを取得できない()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var code = await GetCodeAsync(browser);
+        factory.ChangeUser("ApiKey", "replacement-key");
+        Assert.Equal(HttpStatusCode.BadRequest, (await ExchangeAsync(browser, code, Verifier)).StatusCode);
+    }
+
+    [Fact]
+    public async Task 同意画面表示後のキー再発行では認可コードを発行しない()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var url = AuthorizationUrl();
+        var page = await PageAsync(browser, url);
+        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var consent = await login.Content.ReadAsStringAsync();
+        factory.ChangeUser("ApiKey", "replacement-key");
+        var approved = await PostAsync(browser, url, consent, new() { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") });
+        var callback = await browser.GetAsync(approved.Headers.Location);
+        Assert.DoesNotContain("code=", callback.Headers.Location?.Query ?? "");
+        Assert.Contains("access_denied", callback.Headers.Location?.Query ?? "");
+    }
+
+    [Theory]
+    [InlineData("original-key", "ApiKey", "", 1)]
+    [InlineData("ORIGINAL-KEY", "Disabled", "0", 1)]
+    [InlineData("original-key", "TenantId", "2", 1)]
+    [InlineData("original-key", "ApiKey", "original-key", 2)]
+    public async Task 削除と大文字小文字違いと別テナントと重複キーは認証しない(string apiKey, string column, string value, int userId)
+    {
+        using var factory = new BridgeFactory();
+        factory.ChangeUser(column, value, userId);
+        using var browser = factory.Browser();
+        var url = AuthorizationUrl();
+        var page = await PageAsync(browser, url);
+        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = apiKey });
+        var html = await login.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("name=\"ticket\"", html);
+        Assert.DoesNotContain(apiKey, html);
+    }
+
+    [Fact]
+    public async Task 共通のAPIキーでのログインは共通アカウントとして中継する()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var tokens = await AuthorizeAsync(browser, loginId: "shared");
+        using var request = McpRequest(tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(request)).StatusCode);
+        Assert.Equal("shared-key", Assert.Single(factory.Upstream.Keys));
+    }
+
+    [Fact]
+    public async Task APIキー認証はログインパスワードやTOTP登録状態を使わない()
+    {
+        using var factory = new BridgeFactory();
+        factory.ChangeUser("Password", "");
+        factory.ChangeUser("PasswordExpirationTime", "2000-01-01 00:00:00");
+        factory.ChangeUser("EnableSecretKey", "0");
+        using var browser = factory.Browser();
+        var tokens = await AuthorizeAsync(browser);
+        using var request = McpRequest(tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(request)).StatusCode);
+    }
+
+    [Theory]
     [InlineData("http://localhost", "http://localhost/pleasanter")]
     [InlineData("http://localhost/", "http://localhost/pleasanter")]
     [InlineData("http://localhost", "http://localhost/pleasanter/")]
@@ -114,8 +200,8 @@ public sealed class BridgeFlowTests
         Assert.DoesNotContain("original-key", await response.Content.ReadAsStringAsync());
         factory.ChangeUser("ApiKey", "rotated-key");
         using var next = McpRequest(tokens.AccessToken);
-        Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(next)).StatusCode);
-        Assert.Equal("rotated-key", factory.Upstream.Keys.Last());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await browser.SendAsync(next)).StatusCode);
+        Assert.Single(factory.Upstream.Keys);
         using var db = new SqliteConnection($"Data Source={Path.Combine(factory.Root, "state", "oauth.db")}");
         await db.OpenAsync();
         using var cmd = db.CreateCommand();
@@ -135,11 +221,8 @@ public sealed class BridgeFlowTests
     [InlineData("ApiKey", "")]
     [InlineData("Disabled", "1")]
     [InlineData("Lockout", "1")]
-    [InlineData("Password", "changed")]
-    [InlineData("PasswordExpirationTime", "2000-01-01 00:00:00")]
     [InlineData("LoginExpirationLimit", "2000-01-01 00:00:00")]
-    [InlineData("EnableSecretKey", "0")]
-    public async Task キー削除と利用者無効化とパスワード変更は次の通信に反映される(string column, string value)
+    public async Task キー削除と利用者無効化と利用期限は次の通信に反映される(string column, string value)
     {
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
@@ -159,7 +242,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "alice", ["password"] = "correct-password" });
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("API キー", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync()));
         Assert.Null(response.Headers.Location);
@@ -167,14 +250,15 @@ public sealed class BridgeFlowTests
 
     [Theory]
     [InlineData("wrong-password")]
+    [InlineData("correct-password")]
     [InlineData("' OR 1=1 --")]
-    public async Task 誤ったパスワードとSQLインジェクションは認証できない(string password)
+    public async Task ログインパスワードと誤ったキーとSQLインジェクションは認証できない(string password)
     {
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await browser.GetStringAsync(url);
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "alice", ["password"] = password });
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = password });
         var html = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("name=\"ticket\"", html);
         Assert.Contains("ログインできません", WebUtility.HtmlDecode(html));
@@ -187,10 +271,10 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var noCsrf = await browser.PostAsync("/account/login", new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["decision"] = "login", ["loginId"] = "alice", ["password"] = "correct-password" }));
+            { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" }));
         Assert.Equal(HttpStatusCode.BadRequest, noCsrf.StatusCode);
         var login = await browser.GetStringAsync(url);
-        var consentResponse = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "alice", ["password"] = "correct-password" });
+        var consentResponse = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
         var consent = await consentResponse.Content.ReadAsStringAsync();
         var form = new Dictionary<string, string> { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") };
         var approval = await PostAsync(browser, url, consent, form);
@@ -212,7 +296,7 @@ public sealed class BridgeFlowTests
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
         var response = await PostAsync(browser, url, page, new() { ["decision"] = decision,
-            ["loginId"] = "alice", ["password"] = "wrong" });
+            ["loginId"] = "apikey", ["password"] = "wrong" });
         Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
         Assert.DoesNotContain("code=", response.Headers.Location?.Query ?? "");
     }
@@ -260,7 +344,7 @@ public sealed class BridgeFlowTests
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
         var injected = await PostAsync(browser, url, page, new() { ["decision"] = "login",
-            ["loginId"] = "alice' OR 1=1 --", ["password"] = "correct-password" });
+            ["loginId"] = "alice' OR 1=1 --", ["password"] = "original-key" });
         Assert.DoesNotContain("name=\"ticket\"", await injected.Content.ReadAsStringAsync());
         Assert.Empty(factory.Upstream.Keys);
     }
@@ -316,33 +400,35 @@ public sealed class BridgeFlowTests
     }
 
     [Fact]
-    public async Task アカウントの失敗回数制限はIPによらず動作する()
+    public async Task 同じ接続元のAPIキー認証は失敗回数制限で拒否する()
     {
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var login = await browser.GetStringAsync(url);
         for (var i = 0; i < 5; i++)
-            await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "alice", ["password"] = "wrong" });
-        var correct = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "alice", ["password"] = "correct-password" });
+            await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "wrong" });
+        var correct = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
         Assert.DoesNotContain("name=\"ticket\"", await correct.Content.ReadAsStringAsync());
     }
 
     [Fact]
-    public async Task DBで同じ利用者になるログインIDの別表記でも失敗制限を共有する()
+    public async Task 設定した固定ログインIDだけを受け入れAPIキーを画面へ返さない()
     {
-        using var factory = new BridgeFactory();
+        using var factory = new BridgeFactory(apiKeyLoginId: "connector");
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        for (var i = 0; i < 5; i++)
-            await PostAsync(browser, url, page, new() { ["decision"] = "login",
-                ["loginId"] = "alice" + new string(' ', i), ["password"] = "wrong" });
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login",
-            ["loginId"] = "alice     ", ["password"] = "correct-password" });
-        Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
+        Assert.Contains("value=\"connector\"", page);
+        var rejected = await PostAsync(browser, url, page, new() { ["decision"] = "login",
+            ["loginId"] = "apikey", ["password"] = "original-key" });
+        Assert.DoesNotContain("name=\"ticket\"", await rejected.Content.ReadAsStringAsync());
+        var accepted = await PostAsync(browser, url, page, new() { ["decision"] = "login",
+            ["loginId"] = "connector", ["password"] = "original-key" });
+        var html = await accepted.Content.ReadAsStringAsync();
+        Assert.Contains("name=\"ticket\"", html);
+        Assert.DoesNotContain("original-key", html);
     }
-
     private const string Callback = "https://client.example/callback";
     private static readonly string Verifier = new('a', 64);
     private static string AuthorizationUrl() => "/connect/authorize?client_id=test-client&response_type=code&scope=mcp%20offline_access"
@@ -369,8 +455,8 @@ public sealed class BridgeFlowTests
     {
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = loginId,
-            ["password"] = "correct-password", ["keyMode"] = shared ? "shared" : "personal" });
+        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey",
+            ["password"] = loginId == "bob" ? "bob-key" : loginId == "shared" ? "shared-key" : "original-key", ["keyMode"] = shared ? "shared" : "personal" });
         var consent = await loggedIn.Content.ReadAsStringAsync();
         var approval = await PostAsync(browser, url, consent, new() { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") });
         Assert.Equal(HttpStatusCode.Redirect, approval.StatusCode);
@@ -408,32 +494,32 @@ public sealed class BridgeFlowTests
         public UpstreamHandler Upstream { get; } = new();
         private readonly bool _shared;
         private readonly bool _dynamicRegistration;
+        private readonly string _apiKeyLoginId;
         private readonly string _issuer;
         private readonly string _upstream;
         public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
-            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/")
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey")
         {
             _shared = shared;
             _dynamicRegistration = dynamicRegistration;
+            _apiKeyLoginId = apiKeyLoginId;
             _issuer = issuer;
             _upstream = upstream;
             Directory.CreateDirectory(Path.Combine(Root, "App_Data", "Parameters"));
             var parameters = Path.Combine(Root, "App_Data", "Parameters");
             File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(new BridgeOptions
             {
-                Enabled = true, Issuer = _issuer, PleasanterUrl = _upstream, AllowDevelopmentHttp = true,
+                Enabled = true, ApiKeyLoginId = _apiKeyLoginId, Issuer = _issuer, PleasanterUrl = _upstream, AllowDevelopmentHttp = true,
                 StateDirectory = Path.Combine(Root, "state"), SharedApiKeyUserId = _shared ? 2 : null,
                 Clients = [new OAuthClient { ClientId = "test-client", DisplayName = "Test Client", RedirectUris = [Callback] }],
                 AllowDynamicClientRegistration = _dynamicRegistration, AllowedRedirectUris = [Callback]
             }));
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");
-            File.WriteAllText(Path.Combine(parameters, "Authentication.json"), "{\"Provider\":\"Local\"}");
-            File.WriteAllText(Path.Combine(parameters, "Security.json"), "{\"SecondaryAuthentication\":{\"Mode\":\"None\"}}");
             using var connection = UsersConnection();
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = """
-                CREATE TABLE Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT COLLATE RTRIM, Password TEXT, ApiKey TEXT,
+                CREATE TABLE Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT COLLATE RTRIM, Password TEXT, ApiKey TEXT COLLATE NOCASE,
                     Disabled INTEGER, Lockout INTEGER, PasswordExpirationTime TEXT NULL, LoginExpirationLimit TEXT NULL,
                     LoginExpirationPeriod INTEGER, LastLoginTime TEXT NULL, EnableSecretKey INTEGER);
                 INSERT INTO Users VALUES (1, 1, 'alice', @hash, 'original-key', 0, 0, NULL, NULL, 0, NULL, 1);
@@ -458,11 +544,12 @@ public sealed class BridgeFlowTests
         public HttpClient Browser() => CreateClient(new WebApplicationFactoryClientOptions
             { BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false, HandleCookies = true });
         public SqliteConnection UsersConnection() => new($"Data Source={Path.Combine(Root, "users.db")}");
-        public void ChangeUser(string column, string value)
+        public void ChangeUser(string column, string value, int userId = 1)
         {
             using var connection = UsersConnection(); connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = $"UPDATE Users SET [{column}] = @value WHERE UserId = 1";
+            command.CommandText = $"UPDATE Users SET [{column}] = @value WHERE UserId = @userId";
+            command.Parameters.AddWithValue("@userId", userId);
             command.Parameters.AddWithValue("@value", value); command.ExecuteNonQuery();
         }
     }

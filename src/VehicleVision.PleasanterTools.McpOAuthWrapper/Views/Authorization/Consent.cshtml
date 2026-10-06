@@ -15,8 +15,9 @@
         <input type="hidden" name="requestTicket" value="@Model.RequestTicket">
         @if (Model.Ticket is null)
         {
-            <p><label>ログイン ID <input name="loginId" required maxlength="256" autocomplete="username"></label></p>
-            <p><label>パスワード <input name="password" type="password" required maxlength="1024" autocomplete="current-password"></label></p>
+            <p><label>ログイン ID <input name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></label></p>
+            <p><label>API キー（パスワード欄） <input name="password" type="password" required maxlength="1024" autocomplete="off"></label></p>
+            <p>Pleasanter で発行済みの API キーを入力してください。共通の API キーでログインすると、利用者はその共通アカウントとして扱います。</p>
             @if (Model.AllowSharedKey)
             {
                 <fieldset><legend>接続に使うアカウント</legend>

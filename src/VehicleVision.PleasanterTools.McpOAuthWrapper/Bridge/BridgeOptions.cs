@@ -3,6 +3,7 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 public sealed class BridgeOptions
 {
     public bool Enabled { get; set; }
+    public string ApiKeyLoginId { get; set; } = "apikey";
     public string Issuer { get; set; } = "https://localhost:7042/";
     public string PleasanterUrl { get; set; } = "https://localhost/";
     public int TenantId { get; set; } = 1;
