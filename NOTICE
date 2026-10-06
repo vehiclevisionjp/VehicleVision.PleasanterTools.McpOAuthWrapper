@@ -18,6 +18,9 @@ https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
 https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt
 
 アプリの直接依存（参照日: 2026-10-06）:
+Microsoft.AspNetCore.DataProtection.StackExchangeRedis — MIT（上記 ASP.NET Core）
+StackExchange.Redis — MIT
+https://github.com/StackExchange/StackExchange.Redis/blob/main/LICENSE
 OpenIddict.AspNetCore / OpenIddict.EntityFrameworkCore — Apache-2.0
 https://github.com/openiddict/openiddict-core/blob/dev/LICENSE.md
 Yarp.ReverseProxy — MIT

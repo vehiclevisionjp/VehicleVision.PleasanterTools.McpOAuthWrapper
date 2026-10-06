@@ -1,3 +1,5 @@
+using StackExchange.Redis;
+using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge.Kvs;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
@@ -58,13 +60,40 @@ public static class BridgeSetup
         builder.Services.AddSingleton(rds);
         builder.Services.AddSingleton<IPleasanterConnectionFactory, PleasanterConnectionFactory>();
         builder.Services.AddScoped<IPleasanterUserStore, PleasanterUserStore>();
-        var directory = Path.GetFullPath(options.StateDirectory, root);
-        Directory.CreateDirectory(directory);
-        builder.Services.AddDbContextFactory<OAuthState>(db =>
+        var redis = options.StateStore.Equals("Redis", StringComparison.OrdinalIgnoreCase);
+        if (!redis && !options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("StateStore は Sqlite または Redis を指定してください。");
+        Lazy<ConnectionMultiplexer>? connection = null;
+        var protection = builder.Services.AddDataProtection().SetApplicationName("Pleasanter.McpOAuthWrapper");
+        if (redis)
         {
-            db.UseSqlite($"Data Source={Path.Combine(directory, "oauth.db")}");
-            db.UseOpenIddict();
-        });
+            if (string.IsNullOrWhiteSpace(options.KvsConnectionString) || !System.Text.RegularExpressions.Regex.IsMatch(options.KvsKeyPrefix, "^[A-Za-z0-9:_-]{1,128}$"))
+                throw new InvalidOperationException("KvsConnectionString と専用の KvsKeyPrefix を指定してください。");
+            connection = new Lazy<ConnectionMultiplexer>(() =>
+            {
+                try
+                {
+                    var config = ConfigurationOptions.Parse(options.KvsConnectionString); config.AbortOnConnectFail = true;
+                    return ConnectionMultiplexer.Connect(config);
+                }
+                catch (Exception ex) when (ex is RedisException or ArgumentException)
+                { throw new InvalidOperationException("KVS に接続できません。接続先・認証・TLS の設定を確認してください。"); }
+            });
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ => connection.Value);
+            builder.Services.AddSingleton<KvsBackend>();
+            builder.Services.AddHostedService<KvsMaintenance>();
+            builder.Services.AddSingleton<IBridgeState, KvsBridgeState>();
+            protection.PersistKeysToStackExchangeRedis(() => connection.Value.GetDatabase(), "{" + options.KvsKeyPrefix + "}:keys");
+        }
+        else
+        {
+            var directory = Path.GetFullPath(options.StateDirectory, root);
+            Directory.CreateDirectory(directory);
+            builder.Services.AddDbContextFactory<OAuthState>(db =>
+            { db.UseSqlite($"Data Source={Path.Combine(directory, "oauth.db")}"); db.UseOpenIddict(); });
+            builder.Services.AddSingleton<IBridgeState, SqliteBridgeState>();
+            protection.PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(directory, "keys")));
+        }
         builder.Services.AddSingleton<LoginGuard>();
         builder.Services.AddAntiforgery(anti =>
         {
@@ -73,8 +102,7 @@ public static class BridgeSetup
             anti.Cookie.HttpOnly = true;
             anti.Cookie.SameSite = SameSiteMode.Strict;
         });
-        var protection = builder.Services.AddDataProtection().SetApplicationName("Pleasanter.McpOAuthWrapper")
-            .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(directory, "keys")));
+
         X509Certificate2? signing = null;
         X509Certificate2? encryption = null;
         if (!builder.Environment.IsDevelopment())
@@ -84,7 +112,18 @@ public static class BridgeSetup
             protection.ProtectKeysWithCertificate(encryption);
         }
         builder.Services.AddOpenIddict()
-            .AddCore(core => core.UseEntityFrameworkCore().UseDbContext<OAuthState>())
+            .AddCore(core =>
+            {
+                if (!redis) core.UseEntityFrameworkCore().UseDbContext<OAuthState>();
+                else
+                {
+                    core.DisableEntityCaching();
+                    core.SetDefaultApplicationEntity<KvsApplication>().SetDefaultAuthorizationEntity<KvsAuthorization>()
+                        .SetDefaultScopeEntity<KvsScope>().SetDefaultTokenEntity<KvsToken>();
+                    core.ReplaceApplicationStore<KvsApplication, KvsApplicationStore>().ReplaceAuthorizationStore<KvsAuthorization, KvsAuthorizationStore>()
+                        .ReplaceScopeStore<KvsScope, KvsScopeStore>().ReplaceTokenStore<KvsToken, KvsTokenStore>();
+                }
+            })
             .AddServer(server =>
             {
                 server.SetIssuer(new Uri(options.Issuer));
@@ -128,7 +167,9 @@ public static class BridgeSetup
         builder.Services.AddSingleton<SessionBinding>();
         builder.Services.AddSingleton(new HttpMessageInvoker(new SocketsHttpHandler
         {
-            AllowAutoRedirect = false, UseCookies = false, AutomaticDecompression = System.Net.DecompressionMethods.None,
+            AllowAutoRedirect = false,
+            UseCookies = false,
+            AutomaticDecompression = System.Net.DecompressionMethods.None,
             ConnectTimeout = TimeSpan.FromSeconds(15)
         }));
         builder.Services.AddScoped<McpProxy>();
@@ -144,15 +185,23 @@ public static class BridgeSetup
     public static async Task InitializeBridgeAsync(this WebApplication app, BridgeOptions options)
     {
         await using var scope = app.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OAuthState>();
-        await db.Database.EnsureCreatedAsync();
+        if (options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+            await scope.ServiceProvider.GetRequiredService<OAuthState>().Database.EnsureCreatedAsync();
         var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
         foreach (var client in options.Clients)
         {
             var descriptor = DescribeClient(client.ClientId, client.DisplayName, client.RedirectUris, options.Resource);
-            var existing = await manager.FindByClientIdAsync(client.ClientId);
-            if (existing is null) await manager.CreateAsync(descriptor);
-            else await manager.UpdateAsync(existing, descriptor);
+            for (int retry = 0; retry < 3; retry++)
+            {
+                try
+                {
+                    var existing = await manager.FindByClientIdAsync(client.ClientId);
+                    if (existing is null) await manager.CreateAsync(descriptor);
+                    else await manager.UpdateAsync(existing, descriptor);
+                    break;
+                }
+                catch (OpenIddictExceptions.ConcurrencyException) when (retry < 2) { }
+            }
         }
     }
 
