@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Connect to Pleasanter</value></data>
+  <data name="Client" xml:space="preserve"><value>Application</value></data>
+  <data name="Target" xml:space="preserve"><value>Destination</value></data>
+  <data name="Scope" xml:space="preserve"><value>Permission: use Pleasanter MCP with the permissions of the selected Pleasanter account.</value></data>
+  <data name="Return" xml:space="preserve"><value>Return URL after authorization</value></data>
+  <data name="LoginId" xml:space="preserve"><value>Login ID</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API key (password field)</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Enter an API key issued by Pleasanter. A shared key identifies the shared account, not the individual user.</value></data>
+  <data name="Account" xml:space="preserve"><value>Account to use</value></data>
+  <data name="Personal" xml:space="preserve"><value>My account</value></data>
+  <data name="Shared" xml:space="preserve"><value>Shared account</value></data>
+  <data name="Login" xml:space="preserve"><value>Sign in and review</value></data>
+  <data name="User" xml:space="preserve"><value>Signed-in user</value></data>
+  <data name="Permissions" xml:space="preserve"><value>Permissions to use</value></data>
+  <data name="Approve" xml:space="preserve"><value>Allow this application to connect</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>If you do not have an API key, issue one in </value></data>
+  <data name="MissingAfter" xml:space="preserve"><value> and try again.</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>Unable to sign in. Check the API key and try again later.</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>The selected account has no available API key. Issue one in Pleasanter and sign in again.</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>My Pleasanter account</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>Shared Pleasanter account configured by the administrator</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>The Pleasanter API key is unavailable.</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>Issue an API key in Pleasanter and check the account status.</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>The MCP authentication wrapper is not configured.</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>An administrator must configure OAuth authentication and the connection to Pleasanter.</value></data>
+</root>

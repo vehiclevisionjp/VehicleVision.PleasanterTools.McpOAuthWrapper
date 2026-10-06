@@ -1,7 +1,14 @@
 using OpenIddict.Validation.AspNetCore;
+using VehicleVision.PleasanterTools.McpOAuthWrapper;
 using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
+{
+    string[] languages = ["ja", "en", "zh", "de", "ko", "es", "vi"];
+    options.SetDefaultCulture("ja").AddSupportedCultures(languages).AddSupportedUICultures(languages);
+});
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 var general = new ConfigurationBuilder().SetBasePath(builder.Environment.ContentRootPath)
@@ -11,6 +18,7 @@ var bridge = general.Get<BridgeOptions>() ?? new();
 if (bridge.Enabled) builder.AddBridge(bridge);
 
 var app = builder.Build();
+app.UseRequestLocalization();
 
 app.UseExceptionHandler();
 app.MapHealthChecks("/health/live");
@@ -18,10 +26,10 @@ app.MapHealthChecks("/health/live");
 // 接続を設定するまでは、MCP の操作が成功したように見せない。
 if (!bridge.Enabled)
 {
-    app.MapMethods("/mcp", ["GET", "POST", "DELETE"], () => Results.Problem(
+    app.MapMethods("/mcp", ["GET", "POST", "DELETE"], (Microsoft.Extensions.Localization.IStringLocalizer<UiText> text) => Results.Problem(
     statusCode: StatusCodes.Status501NotImplemented,
-    title: "MCP 認証ラッパーの接続が未設定です。",
-        detail: "管理者が OAuth 認証と Pleasanter への接続を設定する必要があります。"));
+    title: text["NotConfigured"].Value,
+        detail: text["ConfigureHelp"].Value));
 }
 else
 {

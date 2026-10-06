@@ -38,7 +38,8 @@ public static class BridgeSetup
         foreach (var uri in options.AllowedRedirectUris.Concat(options.Clients.SelectMany(c => c.RedirectUris)))
             ValidateRedirect(uri, allowHttp);
         foreach (var origin in options.AllowedOrigins) ValidateUrl(origin.TrimEnd('/') + "/", allowHttp);
-        builder.Services.Configure<ForwardedHeadersOptions>(forwarded =>
+        // IIS 統合が設定する既定の転送元を、空の信頼一覧で消さない。
+        if (options.TrustedProxyAddresses.Count > 0) builder.Services.Configure<ForwardedHeadersOptions>(forwarded =>
         {
             forwarded.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
             forwarded.ForwardLimit = 1;

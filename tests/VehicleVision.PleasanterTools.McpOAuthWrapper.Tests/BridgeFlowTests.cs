@@ -15,6 +15,59 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Tests;
 
 public sealed class BridgeFlowTests
 {
+    [Fact]
+    public async Task 同意画面は検証済み戻り先へのフォーム転送だけを許可する()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        using var initial = await browser.GetAsync(AuthorizationUrl());
+        Assert.Equal("default-src 'none'; form-action 'self' https://client.example; frame-ancestors 'none'; base-uri 'none'",
+            Assert.Single(initial.Headers.GetValues("Content-Security-Policy")));
+        var page = await initial.Content.ReadAsStringAsync();
+        using var consent = await PostAsync(browser, AuthorizationUrl(), page,
+            new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        Assert.Equal(initial.Headers.GetValues("Content-Security-Policy"), consent.Headers.GetValues("Content-Security-Policy"));
+    }
+    [Theory]
+    [InlineData("ja", "Pleasanter への接続許可", "ログインできません")]
+    [InlineData("en", "Connect to Pleasanter", "Unable to sign in")]
+    [InlineData("zh", "连接 Pleasanter", "无法登录")]
+    [InlineData("de", "Mit Pleasanter verbinden", "Anmeldung fehlgeschlagen")]
+    [InlineData("ko", "Pleasanter 연결", "로그인할 수 없습니다")]
+    [InlineData("es", "Conectar con Pleasanter", "No se puede iniciar sesión")]
+    [InlineData("vi", "Kết nối với Pleasanter", "Không thể đăng nhập")]
+    public async Task 七言語のログインとエラーと同意で選択言語を維持する(string culture, string title, string error)
+    {
+        using var factory = new BridgeFactory(shared: true);
+        using var browser = factory.Browser();
+        var url = AuthorizationUrl() + "&culture=" + culture;
+        var page = await PageAsync(browser, url);
+        Assert.Contains($"lang=\"{culture}\"", page);
+        Assert.Contains(title, WebUtility.HtmlDecode(page));
+        var rejected = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "wrong" });
+        Assert.Contains(error, WebUtility.HtmlDecode(await rejected.Content.ReadAsStringAsync()));
+        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var consent = await loggedIn.Content.ReadAsStringAsync();
+        Assert.Contains(title, WebUtility.HtmlDecode(consent));
+        Assert.Contains("/account/consent?culture=" + culture, consent);
+        Assert.DoesNotContain("original-key", consent);
+    }
+
+    [Fact]
+    public async Task 信頼プロキシ未指定では転送元の既定値を保持し偽装ヘッダーを使用しない()
+    {
+        using var factory = new BridgeFactory();
+        using var browser = factory.Browser();
+        var forwarded = factory.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>>().Value;
+        Assert.True(forwarded.KnownProxies.Count + forwarded.KnownIPNetworks.Count > 0);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/.well-known/oauth-protected-resource");
+        request.Headers.Add("X-Forwarded-Host", "evil.example");
+        request.Headers.Add("X-Forwarded-Proto", "https");
+        using var response = await browser.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("evil.example", await response.Content.ReadAsStringAsync());
+    }
+
     [Theory]
     [InlineData(false, 1)]
     [InlineData(true, 1)]

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Conectar con Pleasanter</value></data>
+  <data name="Client" xml:space="preserve"><value>Aplicación</value></data>
+  <data name="Target" xml:space="preserve"><value>Destino</value></data>
+  <data name="Scope" xml:space="preserve"><value>Permiso: usar Pleasanter MCP con los permisos de la cuenta seleccionada.</value></data>
+  <data name="Return" xml:space="preserve"><value>Dirección de retorno tras la autorización</value></data>
+  <data name="LoginId" xml:space="preserve"><value>ID de inicio de sesión</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>Clave API (campo de contraseña)</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Introduzca una clave API emitida por Pleasanter. Una clave compartida identifica la cuenta compartida, no a la persona.</value></data>
+  <data name="Account" xml:space="preserve"><value>Cuenta que se utilizará</value></data>
+  <data name="Personal" xml:space="preserve"><value>Mi cuenta</value></data>
+  <data name="Shared" xml:space="preserve"><value>Cuenta compartida</value></data>
+  <data name="Login" xml:space="preserve"><value>Iniciar sesión y revisar</value></data>
+  <data name="User" xml:space="preserve"><value>Usuario conectado</value></data>
+  <data name="Permissions" xml:space="preserve"><value>Permisos que se utilizarán</value></data>
+  <data name="Approve" xml:space="preserve"><value>Permitir la conexión de esta aplicación</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="MissingBefore" xml:space="preserve"><value>Si no dispone de una clave API, créela en </value></data>
+  <data name="MissingAfter" xml:space="preserve"><value> y vuelva a intentarlo.</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>No se puede iniciar sesión. Compruebe la clave API e inténtelo más tarde.</value></data>
+  <data name="MissingKey" xml:space="preserve"><value>La cuenta seleccionada no tiene una clave API disponible. Créela en Pleasanter e inicie sesión de nuevo.</value></data>
+  <data name="PersonalPermission" xml:space="preserve"><value>Mi cuenta de Pleasanter</value></data>
+  <data name="SharedPermission" xml:space="preserve"><value>Cuenta compartida de Pleasanter configurada por el administrador</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>La clave API de Pleasanter no está disponible.</value></data>
+  <data name="UnavailableHelp" xml:space="preserve"><value>Cree una clave API en Pleasanter y compruebe el estado de la cuenta.</value></data>
+  <data name="NotConfigured" xml:space="preserve"><value>El adaptador de autenticación MCP no está configurado.</value></data>
+  <data name="ConfigureHelp" xml:space="preserve"><value>Un administrador debe configurar OAuth y la conexión con Pleasanter.</value></data>
+</root>
