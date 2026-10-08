@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>Destination</value></data>
   <data name="Scope" xml:space="preserve"><value>Permission: use Pleasanter MCP with the permissions of the selected Pleasanter account.</value></data>
   <data name="Return" xml:space="preserve"><value>Return URL after authorization</value></data>
-  <data name="LoginId" xml:space="preserve"><value>Login ID</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>API key (password field)</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API key</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>Enter an API key issued by Pleasanter. A shared key identifies the shared account, not the individual user.</value></data>
   <data name="Account" xml:space="preserve"><value>Account to use</value></data>
   <data name="Personal" xml:space="preserve"><value>My account</value></data>

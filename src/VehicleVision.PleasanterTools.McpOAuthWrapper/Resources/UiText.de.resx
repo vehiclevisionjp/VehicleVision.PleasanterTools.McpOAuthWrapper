@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>Ziel</value></data>
   <data name="Scope" xml:space="preserve"><value>Berechtigung: Pleasanter MCP mit den Rechten des ausgewählten Pleasanter-Kontos nutzen.</value></data>
   <data name="Return" xml:space="preserve"><value>Rückkehradresse nach der Autorisierung</value></data>
-  <data name="LoginId" xml:space="preserve"><value>Anmelde-ID</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>API-Schlüssel (Passwortfeld)</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API-Schlüssel</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>Geben Sie einen von Pleasanter ausgestellten API-Schlüssel ein. Ein gemeinsamer Schlüssel identifiziert das gemeinsame Konto, nicht die einzelne Person.</value></data>
   <data name="Account" xml:space="preserve"><value>Zu verwendendes Konto</value></data>
   <data name="Personal" xml:space="preserve"><value>Mein Konto</value></data>
