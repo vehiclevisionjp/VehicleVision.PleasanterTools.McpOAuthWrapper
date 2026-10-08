@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>接続先</value></data>
   <data name="Scope" xml:space="preserve"><value>許可する操作：Pleasanter MCP の利用。操作できる範囲は使用する Pleasanter アカウントの権限に従います。</value></data>
   <data name="Return" xml:space="preserve"><value>認可後の戻り先</value></data>
-  <data name="LoginId" xml:space="preserve"><value>ログイン ID</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>API キー（パスワード欄）</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API キー</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>Pleasanter で発行済みの API キーを入力してください。共通の API キーでログインすると、利用者はその共通アカウントとして扱います。</value></data>
   <data name="Account" xml:space="preserve"><value>接続に使うアカウント</value></data>
   <data name="Personal" xml:space="preserve"><value>自分のアカウント</value></data>

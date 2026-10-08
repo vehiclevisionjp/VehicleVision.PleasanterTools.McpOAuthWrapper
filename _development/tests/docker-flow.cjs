@@ -35,7 +35,7 @@ async function authorize(browser,key,mode,shot) {
  const page = await context.newPage(); const auth=authorizationUrl();
  await page.goto(auth.url);
  if(shot) await page.screenshot({path:path.join(images,'login.png'),fullPage:true});
- await page.locator('[name=password]').fill(key);
+ await page.locator('[name=apiKey]').fill(key);
  await page.locator(`[name=keyMode][value=${mode}]`).check();
  await page.locator('[name=decision][value=login]').click();
  await page.locator('[name=ticket]').waitFor({state:'attached'});
@@ -80,7 +80,7 @@ async function mcp(client) {
   console.log('個人キー認可確認'); const personal=await authorize(browser,personalKey,'personal',true); await mcp(personal); result.checks.push('個人キーでOAuth認可・PKCE交換・MCP初期化とツール一覧');
   const shared=await authorize(browser,personalKey,'shared',true); await mcp(shared); result.checks.push('共通権限でOAuth認可・MCP初期化とツール一覧');
   const view=await browser.newPage({viewport:{width:1100,height:800}});
-  await view.goto(authorizationUrl().url); await view.locator('[name=password]').fill('invalid-test-key'); await view.locator('[name=decision][value=login]').click(); await view.locator('[role=alert]').waitFor(); await view.screenshot({path:path.join(images,'login-error.png'),fullPage:true});
+  await view.goto(authorizationUrl().url); await view.locator('[name=apiKey]').fill('invalid-test-key'); await view.locator('[name=decision][value=login]').click(); await view.locator('[role=alert]').waitFor(); await view.screenshot({path:path.join(images,'login-error.png'),fullPage:true});
   for(const culture of ['ja','en','zh','de','ko','es','vi']) { await view.goto(authorizationUrl(culture).url); check(await view.locator('html').getAttribute('lang')===culture,'言語が一致しません。'); await view.screenshot({path:path.join(images,'login-'+culture+'.png'),fullPage:true}); }
   result.checks.push('7言語のログイン画面');
   // 再発行は Pleasanter の標準画面から行い、キーの値は記録しない。
