@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="VehicleVision.PleasanterTools.McpOAuthWrapper.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 配布には設定例だけを含め、配置先の資格情報や認証状態を持ち込まない。 -->
     <Content Remove="App_Data/Parameters/*.json;App_Data/Wrapper/**;**/appsettings.Local.json;**/*.pfx;**/*.pem;**/*.key" />
     <Content Include="App_Data/Parameters/*.example.json" CopyToPublishDirectory="PreserveNewest" />

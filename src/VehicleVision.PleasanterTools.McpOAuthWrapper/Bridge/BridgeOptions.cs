@@ -17,6 +17,8 @@ public sealed class BridgeOptions
     public string StateDirectory { get; set; } = "App_Data/Wrapper";
     public string SigningCertificatePath { get; set; } = "";
     public string EncryptionCertificatePath { get; set; } = "";
+    public string SigningCertificateBase64 { get; set; } = "";
+    public string EncryptionCertificateBase64 { get; set; } = "";
     public string CertificatePassword { get; set; } = "";
     public bool AllowDevelopmentHttp { get; set; }
     public List<string> TrustedProxyAddresses { get; set; } = [];

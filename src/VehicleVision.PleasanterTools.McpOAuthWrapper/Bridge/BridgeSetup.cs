@@ -1,6 +1,7 @@
 using StackExchange.Redis;
 using VehicleVision.PleasanterTools.McpOAuthWrapper.Bridge.Kvs;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -109,8 +110,10 @@ public static class BridgeSetup
         X509Certificate2? encryption = null;
         if (!builder.Environment.IsDevelopment())
         {
-            signing = LoadCertificate(options.SigningCertificatePath, options.CertificatePassword, root);
-            encryption = LoadCertificate(options.EncryptionCertificatePath, options.CertificatePassword, root);
+            signing = LoadCertificate(options.SigningCertificatePath, options.SigningCertificateBase64,
+                options.CertificatePassword, root, "署名用");
+            encryption = LoadCertificate(options.EncryptionCertificatePath, options.EncryptionCertificateBase64,
+                options.CertificatePassword, root, "暗号化用");
             protection.ProtectKeysWithCertificate(encryption);
         }
         builder.Services.AddOpenIddict()
@@ -219,13 +222,41 @@ public static class BridgeSetup
         return result;
     }
 
-    private static X509Certificate2 LoadCertificate(string path, string password, string root)
+    internal static X509Certificate2 LoadCertificate(string path, string base64, string password, string root, string purpose)
     {
-        if (string.IsNullOrWhiteSpace(path)) throw new InvalidOperationException("本番では署名・暗号化証明書を設定してください。");
-        var certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.GetFullPath(path, root), password);
+        var fromFile = !string.IsNullOrWhiteSpace(path);
+        var fromSecret = !string.IsNullOrWhiteSpace(base64);
+        if (fromFile == fromSecret)
+            throw new InvalidOperationException($"本番の{purpose}証明書は Path または Base64 のどちらか一方を設定してください。");
+        X509Certificate2 certificate;
+        byte[]? pfx = null;
+        try
+        {
+            // Key Vault 参照の解決は App Service に任せる。秘密鍵をディスクへ書き出さない。
+            if (fromSecret)
+            {
+                pfx = Convert.FromBase64String(base64);
+                certificate = X509CertificateLoader.LoadPkcs12(pfx, password, X509KeyStorageFlags.EphemeralKeySet);
+            }
+            else
+                certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.GetFullPath(path, root), password,
+                    X509KeyStorageFlags.EphemeralKeySet);
+        }
+        catch (Exception ex) when (ex is FormatException or CryptographicException or IOException or ArgumentException)
+        {
+            // 証明書本体・パスワードや、それらを含み得る元の例外をログへ出さない。
+            throw new InvalidOperationException($"{purpose}証明書を読み込めません。PFX、パスワード、Key Vault 参照の解決状態を確認してください。");
+        }
+        finally
+        {
+            if (pfx is not null) CryptographicOperations.ZeroMemory(pfx);
+        }
         if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
             || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
-            throw new InvalidOperationException("証明書の秘密鍵と有効期限を確認してください。");
+        {
+            certificate.Dispose();
+            throw new InvalidOperationException($"{purpose}証明書の秘密鍵と有効期限を確認してください。");
+        }
         return certificate;
     }
 
