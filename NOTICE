@@ -34,6 +34,19 @@ https://github.com/dotnet/SqlClient/blob/main/LICENSE
 MySqlConnector — MIT
 https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE
 
+証明書のクラウド取得用の直接依存（参照日: 2026-10-10）:
+Azure.Identity / Azure.Security.KeyVault.Secrets — MIT
+https://github.com/Azure/azure-sdk-for-net/blob/main/LICENSE.txt
+AWSSDK.SecretsManager — Apache-2.0
+https://github.com/aws/aws-sdk-net/blob/master/License.txt
+Google.Cloud.SecretManager.V1 — Apache-2.0
+https://github.com/googleapis/google-cloud-dotnet/blob/main/LICENSE
+OCI.DotNetSDK.Secrets / OCI.DotNetSDK.Common — UPL-1.0 または Apache-2.0
+Copyright (c) 2020, 2026, Oracle and/or its affiliates.
+https://github.com/oracle/oci-dotnet-sdk/blob/master/LICENSE.txt
+Universal Permissive License (UPL), Version 1.0:
+https://oss.oracle.com/licenses/upl/
+
 テスト用の直接依存（配布する Web アプリには含めない）:
 Microsoft.AspNetCore.Mvc.Testing — MIT（上記 ASP.NET Core）
 Microsoft.NET.Test.Sdk — MIT

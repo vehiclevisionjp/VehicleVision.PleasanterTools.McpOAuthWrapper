@@ -106,16 +106,10 @@ public static class BridgeSetup
             anti.Cookie.SameSite = SameSiteMode.Strict;
         });
 
-        X509Certificate2? signing = null;
-        X509Certificate2? encryption = null;
-        if (!builder.Environment.IsDevelopment())
-        {
-            signing = LoadCertificate(options.SigningCertificatePath, options.SigningCertificateBase64,
-                options.CertificatePassword, root, "署名用");
-            encryption = LoadCertificate(options.EncryptionCertificatePath, options.EncryptionCertificateBase64,
-                options.CertificatePassword, root, "暗号化用");
-            protection.ProtectKeysWithCertificate(encryption);
-        }
+        // 配置方式に関係なく同じ永続証明書を使用する。
+        var signing = CertificateLoader.Load(options, root, signing: true);
+        var encryption = CertificateLoader.Load(options, root, signing: false);
+        protection.ProtectKeysWithCertificate(encryption);
         builder.Services.AddOpenIddict()
             .AddCore(core =>
             {
@@ -151,10 +145,7 @@ public static class BridgeSetup
                 server.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(2));
                 server.SetRefreshTokenLifetime(TimeSpan.FromDays(1));
                 server.UseReferenceAccessTokens().UseReferenceRefreshTokens();
-                if (signing is not null && encryption is not null)
-                    server.AddSigningCertificate(signing).AddEncryptionCertificate(encryption);
-                else
-                    server.AddDevelopmentSigningCertificate().AddDevelopmentEncryptionCertificate();
+                server.AddSigningCertificate(signing).AddEncryptionCertificate(encryption);
                 var asp = server.UseAspNetCore().EnableAuthorizationEndpointPassthrough().EnableTokenEndpointPassthrough();
                 if (allowHttp) asp.DisableTransportSecurityRequirement();
             })

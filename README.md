@@ -16,7 +16,7 @@ Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth �
 
 初期設定は接続を無効にしており、起動確認だけでは MCP を利用できません。API キーは先に Pleasanter で発行しておきます。
 
-本番では署名用・暗号化用の証明書が必要です。Azure App Service では、Key Vault の証明書をマネージド ID と Key Vault 参照で読み込めます。PFX ファイルを配置する方法と、Key Vault 上で生成して Base64 入力へ渡す方法は [導入手順](_documents/導入手順.md)にまとめています。
+OAuth の署名用・暗号化用証明書は、未指定の場合に有効期限10年で自動生成し、再起動後も同じものを使います。自分で用意した PFX のファイル／Base64、Windows 証明書ストア、Azure・AWS・GCP・OCI のシークレット管理からの取得も選べます。設定方法と証明書を削除した場合の影響は [OAuth 証明書の設定](_documents/OAuth証明書の設定.md)を参照してください。
 
 ## 使い方
 
