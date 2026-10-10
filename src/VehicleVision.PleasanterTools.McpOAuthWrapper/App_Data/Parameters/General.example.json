@@ -14,6 +14,28 @@
   "AllowedOrigins": [],
   "SigningCertificatePath": "",
   "EncryptionCertificatePath": "",
+  "SigningCertificateBase64": "",
+  "EncryptionCertificateBase64": "",
+  "SigningCertificateThumbprint": "",
+  "EncryptionCertificateThumbprint": "",
+  "CertificateStoreName": "My",
+  "CertificateStoreLocation": "CurrentUser",
+  "SigningCertificateCloud": {
+    "Provider": "",
+    "SecretId": "",
+    "Version": "",
+    "Region": "",
+    "OciAuthentication": "InstancePrincipal",
+    "OciConfigProfile": "DEFAULT"
+  },
+  "EncryptionCertificateCloud": {
+    "Provider": "",
+    "SecretId": "",
+    "Version": "",
+    "Region": "",
+    "OciAuthentication": "InstancePrincipal",
+    "OciConfigProfile": "DEFAULT"
+  },
   "Clients": [],
   "AllowDynamicClientRegistration": false,
   "MaxDynamicClients": 100,

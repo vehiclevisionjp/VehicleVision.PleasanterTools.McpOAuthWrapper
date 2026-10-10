@@ -733,6 +733,15 @@ public sealed class BridgeFlowTests
 
     private sealed class BridgeFactory : WebApplicationFactory<Program>
     {
+        // 独立ホスト間で同じ鍵を使い、KVS の状態共有も検証する。
+        private static readonly Lazy<string> CertificateBase64 = new(() =>
+        {
+            using var rsa = RSA.Create(2048);
+            var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+                "CN=HTTP test only", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
+            return Convert.ToBase64String(certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx));
+        });
         public string Root { get; } = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
         public UpstreamHandler Upstream { get; } = new();
         public bool IsKvs => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION"));
@@ -761,6 +770,8 @@ public sealed class BridgeFlowTests
                 KvsConnectionString = Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION") ?? "",
                 KvsKeyPrefix = KvsPrefix,
                 StateDirectory = Path.Combine(Root, "state"),
+                SigningCertificateBase64 = CertificateBase64.Value,
+                EncryptionCertificateBase64 = CertificateBase64.Value,
                 SharedApiKeyUserId = _shared ? 2 : null,
                 Clients = [new OAuthClient { ClientId = "test-client", DisplayName = "Test Client", RedirectUris = [Callback] }],
                 AllowDynamicClientRegistration = _dynamicRegistration,

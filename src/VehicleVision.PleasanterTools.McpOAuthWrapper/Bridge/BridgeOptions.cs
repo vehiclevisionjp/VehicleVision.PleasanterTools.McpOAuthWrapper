@@ -16,6 +16,14 @@ public sealed class BridgeOptions
     public string StateDirectory { get; set; } = "App_Data/Wrapper";
     public string SigningCertificatePath { get; set; } = "";
     public string EncryptionCertificatePath { get; set; } = "";
+    public string SigningCertificateBase64 { get; set; } = "";
+    public string EncryptionCertificateBase64 { get; set; } = "";
+    public string SigningCertificateThumbprint { get; set; } = "";
+    public string EncryptionCertificateThumbprint { get; set; } = "";
+    public string CertificateStoreName { get; set; } = "My";
+    public string CertificateStoreLocation { get; set; } = "CurrentUser";
+    public CloudCertificateOptions SigningCertificateCloud { get; set; } = new();
+    public CloudCertificateOptions EncryptionCertificateCloud { get; set; } = new();
     public string CertificatePassword { get; set; } = "";
     public bool AllowDevelopmentHttp { get; set; }
     public List<string> TrustedProxyAddresses { get; set; } = [];
@@ -27,6 +35,16 @@ public sealed class BridgeOptions
     public int MaxDynamicClients { get; set; } = 100;
 
     public string Resource => new Uri(new Uri(Issuer), "mcp").AbsoluteUri;
+}
+
+public sealed class CloudCertificateOptions
+{
+    public string Provider { get; set; } = "";
+    public string SecretId { get; set; } = "";
+    public string Version { get; set; } = "";
+    public string Region { get; set; } = "";
+    public string OciAuthentication { get; set; } = "InstancePrincipal";
+    public string OciConfigProfile { get; set; } = "DEFAULT";
 }
 
 public sealed class OAuthClient

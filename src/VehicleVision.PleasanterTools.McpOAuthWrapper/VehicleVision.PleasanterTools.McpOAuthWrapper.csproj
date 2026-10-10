@@ -7,12 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="VehicleVision.PleasanterTools.McpOAuthWrapper.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 配布には設定例だけを含め、配置先の資格情報や認証状態を持ち込まない。 -->
     <Content Remove="App_Data/Parameters/*.json;App_Data/Wrapper/**;**/appsettings.Local.json;**/*.pfx;**/*.pem;**/*.key" />
     <Content Include="App_Data/Parameters/*.example.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.2" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.100.16" />
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.8.0" />
+    <PackageReference Include="OCI.DotNetSDK.Secrets" Version="148.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.12" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />

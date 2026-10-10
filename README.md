@@ -16,6 +16,8 @@ Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth �
 
 初期設定は接続を無効にしており、起動確認だけでは MCP を利用できません。API キーは先に Pleasanter で発行しておきます。
 
+OAuth の署名用・暗号化用証明書は、未指定の場合に有効期限10年で自動生成し、再起動後も同じものを使います。自分で用意した PFX のファイル／Base64、Windows 証明書ストア、Azure・AWS・GCP・OCI のシークレット管理からの取得も選べます。設定方法と証明書を削除した場合の影響は [OAuth 証明書の設定](_documents/OAuth証明書の設定.md)を参照してください。
+
 ## 使い方
 
 1. AI アプリで管理者が用意したコネクタを選びます。接続先はラッパーの `/mcp` です。
@@ -30,7 +32,7 @@ API キーは接続時の認証に使い、ラッパーには保存しません�
 
 ## 現在の対応範囲
 
-OAuth 認可、個人／共通アカウントの選択、MCP の中継を実装した初期版です。Docker 上の Pleasanter 1.5.8.1／PostgreSQL 17 で OAuth 認可と MCP 接続を確認しています。SQL Server 2025・PostgreSQL 17・MySQL 8.4 は Docker で読み取り専用接続と Users の SELECT を確認済みです。Claude の組織コネクタ、Azure App Service・IIS の実機確認は未実施です。 初期設定では接続を無効にしています。
+OAuth 認可、個人／共通アカウントの選択、MCP の中継を実装した初期版です。Docker 上の Pleasanter 1.5.8.1／PostgreSQL 17 で OAuth 認可と MCP 接続を確認しています。SQL Server 2025・PostgreSQL 17・MySQL 8.4 は Docker で読み取り専用接続と Users の SELECT を確認済みです。初期設定では接続を無効にしています。導入後は認可から MCP 接続までを確認してください。
 
 API キーを持っていることを認証根拠とします。Pleasanter のログインパスワードは使いません。LDAP・パスキー・二段階認証を使用する環境でも、Pleasanter で発行済みの API キーを使う方式です。ラッパーがそれらのログイン処理を実行したり、完了した証明を受け取ったりするものではありません。
 
