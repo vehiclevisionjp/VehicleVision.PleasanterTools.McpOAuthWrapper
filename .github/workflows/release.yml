@@ -94,7 +94,7 @@ jobs:
           path: release-assets
       - name: ZIP の整合性を確認する
         working-directory: release-assets
-        run: sha256sum --check McpOAuthWrapper.zip.sha256
+        run: sha256sum --check ./*.zip.sha256
       - name: リリースを公開する
         env:
           GH_TOKEN: ${{ github.token }}
@@ -114,10 +114,10 @@ jobs:
             echo
             echo '## 導入'
             echo
-            echo 'McpOAuthWrapper.zip を展開してください。.NET 10 ランタイムが必要です。Azure App Service／Windows IIS の手順は ZIP 内の _documents/導入手順.md にあります。'
+            echo "VehicleVision.PleasanterTools.McpOAuthWrapper-${RELEASE_TAG#v}.zip を展開してください。.NET 10 ランタイムが必要です。Azure App Service／Windows IIS の手順は ZIP 内の _documents/導入手順.md にあります。"
             echo
             echo 'AGPL-3.0-or-later。ソースは同じタグから取得できます。依存のライセンスは NOTICE を参照してください。'
           } > release-notes.md
           args=("$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md)
           if [ "$PRERELEASE" = 'true' ]; then args+=(--prerelease); fi
-          gh release create "${args[@]}" release-assets/McpOAuthWrapper.zip release-assets/McpOAuthWrapper.zip.sha256 LICENSE NOTICE
+          gh release create "${args[@]}" release-assets/*.zip release-assets/*.zip.sha256 LICENSE NOTICE

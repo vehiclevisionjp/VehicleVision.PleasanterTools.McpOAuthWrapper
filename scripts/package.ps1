@@ -6,6 +6,9 @@ $packageRoot = Join-Path $repoRoot ('artifacts/package-' + [Guid]::NewGuid().ToS
 $appDirectory = Join-Path $packageRoot 'app'
 $project = Join-Path $repoRoot 'src/VehicleVision.PleasanterTools.McpOAuthWrapper/VehicleVision.PleasanterTools.McpOAuthWrapper.csproj'
 $versionArguments = @()
+[xml]$props = Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw
+$zipVersion = if ($Version) { $Version } else { [string]$props.Project.PropertyGroup.VersionPrefix }
+$zipName = "VehicleVision.PleasanterTools.McpOAuthWrapper-$zipVersion.zip"
 if ($Version) { $versionArguments = @("-p:Version=$Version") }
 dotnet publish $project -c Release --no-restore --no-self-contained -p:UseAppHost=false -p:DebugType=None -p:DebugSymbols=false -o $appDirectory @versionArguments
 if ($LASTEXITCODE -ne 0) { throw '配布物の生成に失敗しました。' }
@@ -23,10 +26,10 @@ if ($LASTEXITCODE -ne 0) { throw 'ソースのコミットを確認できませ�
 Set-Content -LiteralPath (Join-Path $appDirectory 'BUILD.txt') -Value @(
     "Commit: $commit", "Source: https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper/tree/$commit"
 ) -Encoding utf8
-$zipPath = Join-Path $packageRoot 'McpOAuthWrapper.zip'
+$zipPath = Join-Path $packageRoot $zipName
 [System.IO.Compression.ZipFile]::CreateFromDirectory($appDirectory, $zipPath)
 $checksumPath = "$zipPath.sha256"
 $checksum = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content -LiteralPath $checksumPath -Value "$checksum  McpOAuthWrapper.zip" -Encoding utf8NoBOM
+Set-Content -LiteralPath $checksumPath -Value "$checksum  $zipName" -Encoding utf8NoBOM
 if ($env:GITHUB_OUTPUT) { Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value @("directory=$appDirectory", "zip=$zipPath", "checksum=$checksumPath") -Encoding utf8 }
 Write-Output "配布 ZIP: $zipPath"
