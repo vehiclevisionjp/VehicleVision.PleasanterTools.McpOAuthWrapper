@@ -5,7 +5,7 @@ Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth �
 ## インストール
 
 1. Windows または Linux に [ASP.NET Core Runtime 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) をインストールします。
-2. [Release ページ](https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper/releases)で使用するバージョンを選び、Assets の **McpOAuthWrapper.zip** をダウンロードして展開します。Source code の ZIP は配布アプリではありません。
+2. [Release ページ](https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper/releases)で使用するバージョンを選び、Assets の **VehicleVision.PleasanterTools.McpOAuthWrapper-バージョン-portable.zip** をダウンロードして展開します。Source code の ZIP は配布アプリではありません。
 3. 展開先で次のコマンドを実行し、`http://127.0.0.1:5180/health/live` に `Healthy` が表示されることを確認します。
 
    ```text
