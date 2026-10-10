@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>연결 대상</value></data>
   <data name="Scope" xml:space="preserve"><value>권한: 선택한 Pleasanter 계정의 권한으로 Pleasanter MCP를 사용합니다.</value></data>
   <data name="Return" xml:space="preserve"><value>승인 후 돌아갈 주소</value></data>
-  <data name="LoginId" xml:space="preserve"><value>로그인 ID</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>API 키 (비밀번호 입력란)</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API 키</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>Pleasanter에서 발급한 API 키를 입력하세요. 공통 키로 로그인하면 개인이 아닌 공통 계정으로 식별됩니다.</value></data>
   <data name="Account" xml:space="preserve"><value>사용할 계정</value></data>
   <data name="Personal" xml:space="preserve"><value>내 계정</value></data>

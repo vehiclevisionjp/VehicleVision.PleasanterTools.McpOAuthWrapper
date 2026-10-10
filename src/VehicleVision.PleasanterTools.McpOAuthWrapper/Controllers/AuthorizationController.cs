@@ -16,7 +16,7 @@ namespace VehicleVision.PleasanterTools.McpOAuthWrapper.Controllers;
 
 public sealed record ConsentView(string ClientName, string RedirectUri, string ActionUrl,
     string PleasanterUrl, bool AllowSharedKey, string RequestTicket, string? Error = null,
-    string? Ticket = null, string? LoginId = null, string? KeyDescription = null, string ApiKeyLoginId = "apikey");
+    string? Ticket = null, string? LoginId = null, string? KeyDescription = null);
 
 [EnableRateLimiting("oauth")]
 [RequestSizeLimit(16384)]
@@ -62,10 +62,10 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         return View("Consent", ViewFor(info));
     }
 
-    // パスワードは OAuth エンドポイントへ送らず、プロトコルのログに混入させない。
+    // API キーは OAuth エンドポイントへ送らず、プロトコルのログに混入させない。
     [HttpPost("/account/login")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login([FromForm] string? loginId, [FromForm] string? password,
+    public async Task<IActionResult> Login([FromForm] string? apiKey,
         [FromForm] string? keyMode, [FromForm] string? requestTicket, [FromForm] string? decision,
         CancellationToken cancellationToken)
     {
@@ -73,12 +73,12 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         if (info is null) return BadRequest();
         if (decision == "deny") return Denied(info);
         var attemptId = "api-key-ip:" + (HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-        if (decision != "login" || !string.Equals(loginId, options.ApiKeyLoginId, StringComparison.Ordinal)
-            || string.IsNullOrEmpty(password) || password.Length > 1024
+        if (decision != "login"
+            || string.IsNullOrEmpty(apiKey) || apiKey.Length > 1024
             || !await guard.TryAttemptAsync(options.TenantId, attemptId, cancellationToken))
             return View("Consent", ViewFor(info, text["LoginFailed"].Value));
-        var authenticated = await users.FindByApiKeyAsync(options.TenantId, password, cancellationToken);
-        if (authenticated is null || !authenticated.VerifyApiKey(password) || !authenticated.CanUseApi(options.DatabaseNow))
+        var authenticated = await users.FindByApiKeyAsync(options.TenantId, apiKey, cancellationToken);
+        if (authenticated is null || !authenticated.VerifyApiKey(apiKey) || !authenticated.CanUseApi(options.DatabaseNow))
             return View("Consent", ViewFor(info, text["LoginFailed"].Value));
         await guard.ReleaseAsync(options.TenantId, attemptId, cancellationToken);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
@@ -149,7 +149,7 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         var callback = new Uri(info.RedirectUri).GetLeftPart(UriPartial.Authority);
         Response.Headers["Content-Security-Policy"] = $"default-src 'none'; style-src 'self'; script-src 'self'; form-action 'self' {callback}; frame-ancestors 'none'; base-uri 'none'";
         return new(info.ClientName, info.RedirectUri, CultureUrl("/account/login"), options.PleasanterUrl,
-            options.SharedApiKeyUserId.HasValue, Protect(info), error, ApiKeyLoginId: options.ApiKeyLoginId);
+            options.SharedApiKeyUserId.HasValue, Protect(info), error);
     }
     private static string CultureUrl(string path) => path + "?culture=" + Uri.EscapeDataString(System.Globalization.CultureInfo.CurrentUICulture.Name);
     private string Protect<T>(T data) => Protector<T>().Protect(JsonSerializer.Serialize(data), TimeSpan.FromMinutes(5));

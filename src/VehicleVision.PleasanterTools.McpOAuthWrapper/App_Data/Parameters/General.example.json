@@ -1,6 +1,5 @@
 {
   "Enabled": false,
-  "ApiKeyLoginId": "apikey",
   "Issuer": "https://localhost:7042/",
   "PleasanterUrl": "https://localhost/",
   "TenantId": 1,

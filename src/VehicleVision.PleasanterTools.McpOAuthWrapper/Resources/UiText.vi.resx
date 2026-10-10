@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>Đích kết nối</value></data>
   <data name="Scope" xml:space="preserve"><value>Quyền: sử dụng Pleasanter MCP theo quyền của tài khoản Pleasanter đã chọn.</value></data>
   <data name="Return" xml:space="preserve"><value>Địa chỉ trở về sau khi cấp quyền</value></data>
-  <data name="LoginId" xml:space="preserve"><value>ID đăng nhập</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>Khóa API (ô mật khẩu)</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>Khóa API</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>Nhập khóa API do Pleasanter cấp. Khóa dùng chung xác định tài khoản dùng chung, không xác định từng người.</value></data>
   <data name="Account" xml:space="preserve"><value>Tài khoản sử dụng</value></data>
   <data name="Personal" xml:space="preserve"><value>Tài khoản của tôi</value></data>
