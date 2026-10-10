@@ -8,7 +8,7 @@ $project = Join-Path $repoRoot 'src/VehicleVision.PleasanterTools.McpOAuthWrappe
 $versionArguments = @()
 [xml]$props = Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw
 $zipVersion = if ($Version) { $Version } else { [string]$props.Project.PropertyGroup.VersionPrefix }
-$zipName = "VehicleVision.PleasanterTools.McpOAuthWrapper-$zipVersion.zip"
+$zipName = "VehicleVision.PleasanterTools.McpOAuthWrapper-$zipVersion-portable.zip"
 if ($Version) { $versionArguments = @("-p:Version=$Version") }
 dotnet publish $project -c Release --no-restore --no-self-contained -p:UseAppHost=false -p:DebugType=None -p:DebugSymbols=false -o $appDirectory @versionArguments
 if ($LASTEXITCODE -ne 0) { throw '配布物の生成に失敗しました。' }
