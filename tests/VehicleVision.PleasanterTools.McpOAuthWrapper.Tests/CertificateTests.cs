@@ -46,7 +46,7 @@ public sealed class CertificateTests
     [Theory]
     [InlineData("", "")]
     [InlineData("existing.pfx", "also-set")]
-    public void 証明書の未設定と二重設定は起動時に拒否する(string path, string base64)
+    public void PFX入力の未指定と二重入力を直接ローダーで拒否する(string path, string base64)
     {
         var error = Assert.Throws<InvalidOperationException>(() => BridgeSetup.LoadCertificate(path, base64, "", ".", "署名用"));
         Assert.Contains("どちらか一方", error.Message);
@@ -89,8 +89,10 @@ public sealed class CertificateTests
         Assert.Contains("秘密鍵と有効期限", error.Message);
     }
 
-    [Fact]
-    public async Task Productionでシークレットから証明書を登録し状態保護にも使用する()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Productionで証明書を登録し再起動後も状態を復号できる(bool automatic)
     {
         var root = Path.Combine(Path.GetTempPath(), "mcp-certificates-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(root, "App_Data", "Parameters"));
@@ -107,6 +109,11 @@ public sealed class CertificateTests
                 ["EncryptionCertificateBase64"] = Convert.ToBase64String(encryption.Export(X509ContentType.Pfx, ""))
             }).Build();
             var options = configuration.Get<BridgeOptions>()!;
+            if (automatic)
+            {
+                options.SigningCertificateBase64 = "";
+                options.EncryptionCertificateBase64 = "";
+            }
             options.Issuer = "https://mcp.example/";
             options.PleasanterUrl = "https://pleasanter.example/";
             options.StateDirectory = Path.Combine(root, "state");
@@ -115,23 +122,40 @@ public sealed class CertificateTests
             builder.AddBridge(options);
             await using var app = builder.Build();
             var server = app.Services.GetRequiredService<IOptions<OpenIddictServerOptions>>().Value;
-            Assert.Contains(server.SigningCredentials, credential =>
-                credential.Key is X509SecurityKey key && key.Certificate.Thumbprint == signing.Thumbprint);
-            Assert.Contains(server.EncryptionCredentials, credential =>
-                credential.Key is X509SecurityKey key && key.Certificate.Thumbprint == encryption.Thumbprint);
+            if (!automatic)
+            {
+                Assert.Contains(server.SigningCredentials, credential =>
+                    credential.Key is X509SecurityKey key && key.Certificate.Thumbprint == signing.Thumbprint);
+                Assert.Contains(server.EncryptionCredentials, credential =>
+                    credential.Key is X509SecurityKey key && key.Certificate.Thumbprint == encryption.Thumbprint);
+            }
             var protector = app.Services.GetRequiredService<IDataProtectionProvider>().CreateProtector("certificate-test");
             var protectedState = protector.Protect("state-value");
             Assert.Equal("state-value", protector.Unprotect(protectedState));
             var keyFiles = Directory.GetFiles(Path.Combine(root, "state", "keys"), "*.xml");
             Assert.NotEmpty(keyFiles);
             Assert.All(keyFiles, file => Assert.Contains("encryptedSecret", File.ReadAllText(file)));
-            Assert.Empty(Directory.GetFiles(root, "*.pfx", SearchOption.AllDirectories));
+            Assert.Equal(automatic ? 2 : 0, Directory.GetFiles(root, "*.pfx", SearchOption.AllDirectories).Length);
             // 再起動を想定した独立ホストでも、保存済みの鍵を復号できる。
             var restart = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = root, EnvironmentName = "Production" });
             restart.AddBridge(options);
             await using var restartedApp = restart.Build();
             var restartedProtector = restartedApp.Services.GetRequiredService<IDataProtectionProvider>().CreateProtector("certificate-test");
             Assert.Equal("state-value", restartedProtector.Unprotect(protectedState));
+            if (automatic)
+            {
+                // 証明書だけを失うと、状態を残していても旧 Data Protection 鍵を復号できない。
+                var path = Path.Combine(root, "state", "certificates", "encryption.pfx");
+                using var previous = X509CertificateLoader.LoadPkcs12FromFile(path, "", X509KeyStorageFlags.EphemeralKeySet);
+                File.Delete(path);
+                var afterDeletion = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = root, EnvironmentName = "Production" });
+                afterDeletion.AddBridge(options);
+                await using var replacementApp = afterDeletion.Build();
+                using var replacement = X509CertificateLoader.LoadPkcs12FromFile(path, "", X509KeyStorageFlags.EphemeralKeySet);
+                Assert.NotEqual(previous.Thumbprint, replacement.Thumbprint);
+                var replacementProtector = replacementApp.Services.GetRequiredService<IDataProtectionProvider>().CreateProtector("certificate-test");
+                Assert.Throws<CryptographicException>(() => replacementProtector.Unprotect(protectedState));
+            }
         }
         finally { Directory.Delete(root, recursive: true); }
     }
