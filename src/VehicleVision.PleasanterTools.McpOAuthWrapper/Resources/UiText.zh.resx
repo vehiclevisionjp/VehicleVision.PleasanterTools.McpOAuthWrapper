@@ -7,8 +7,7 @@
   <data name="Target" xml:space="preserve"><value>连接目标</value></data>
   <data name="Scope" xml:space="preserve"><value>授权：使用 Pleasanter MCP。操作范围取决于所选 Pleasanter 账户的权限。</value></data>
   <data name="Return" xml:space="preserve"><value>授权后的返回地址</value></data>
-  <data name="LoginId" xml:space="preserve"><value>登录 ID</value></data>
-  <data name="ApiKey" xml:space="preserve"><value>API 密钥（密码栏）</value></data>
+  <data name="ApiKey" xml:space="preserve"><value>API 密钥</value></data>
   <data name="KeyHelp" xml:space="preserve"><value>请输入 Pleasanter 已签发的 API 密钥。共享密钥将用户识别为共享账户，无法识别个人。</value></data>
   <data name="Account" xml:space="preserve"><value>使用的账户</value></data>
   <data name="Personal" xml:space="preserve"><value>我的账户</value></data>

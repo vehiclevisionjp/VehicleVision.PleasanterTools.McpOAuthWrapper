@@ -28,8 +28,6 @@ public static class BridgeSetup
             throw new InvalidOperationException("Dbms は PostgreSQL、SQLServer、MySQL のいずれかです。");
         if (options.TenantId <= 0 || options.SharedApiKeyUserId is <= 0)
             throw new InvalidOperationException("TenantId と共通キーの所有者 ID を確認してください。");
-        if (string.IsNullOrWhiteSpace(options.ApiKeyLoginId) || options.ApiKeyLoginId.Length > 256)
-            throw new InvalidOperationException("ApiKeyLoginId は1～256文字で設定してください。");
         if (options.MaxDynamicClients is < 1 or > 10000)
             throw new InvalidOperationException("MaxDynamicClients は 1～10000 で設定してください。");
         _ = TimeZoneInfo.FindSystemTimeZoneById(options.DatabaseTimeZoneId);

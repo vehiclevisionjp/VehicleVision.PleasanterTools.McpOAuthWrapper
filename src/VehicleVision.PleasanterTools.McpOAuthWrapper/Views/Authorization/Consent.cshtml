@@ -47,10 +47,9 @@
                 <input type="hidden" name="requestTicket" value="@Model.RequestTicket">
                 @if (Model.Ticket is null)
                 {
-                    <div class="field"><label for="login-id">@Text["LoginId"]</label><input id="login-id" name="loginId" value="@Model.ApiKeyLoginId" readonly required maxlength="256" autocomplete="username"></div>
                     <div class="field">
                         <label for="api-key">@Text["ApiKey"]</label>
-                        <div class="key-control"><input id="api-key" name="password" type="password" required maxlength="1024" autocomplete="off" aria-describedby="key-help" spellcheck="false"><button type="button" data-key-toggle data-show="@Text["ShowKey"]" data-hide="@Text["HideKey"]" aria-controls="api-key" aria-pressed="false" hidden>@Text["ShowKey"]</button></div>
+                        <div class="key-control"><input id="api-key" name="apiKey" type="password" required maxlength="1024" autocomplete="off" aria-describedby="key-help" spellcheck="false"><button type="button" data-key-toggle data-show="@Text["ShowKey"]" data-hide="@Text["HideKey"]" aria-controls="api-key" aria-pressed="false" hidden>@Text["ShowKey"]</button></div>
                     </div>
                     <p id="key-help" class="hint">@Text["KeyHelp"]</p>
                     @if (Model.AllowSharedKey)

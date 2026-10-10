@@ -145,7 +145,7 @@ public sealed class BridgeFlowTests
             Assert.Single(initial.Headers.GetValues("Content-Security-Policy")));
         var page = await initial.Content.ReadAsStringAsync();
         using var consent = await PostAsync(browser, AuthorizationUrl(), page,
-            new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+            new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         Assert.Equal(initial.Headers.GetValues("Content-Security-Policy"), consent.Headers.GetValues("Content-Security-Policy"));
     }
     [Theory]
@@ -164,9 +164,9 @@ public sealed class BridgeFlowTests
         var page = await PageAsync(browser, url);
         Assert.Contains($"lang=\"{culture}\"", page);
         Assert.Contains(title, WebUtility.HtmlDecode(page));
-        var rejected = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "wrong" });
+        var rejected = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = "wrong" });
         Assert.Contains(error, WebUtility.HtmlDecode(await rejected.Content.ReadAsStringAsync()));
-        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var loggedIn = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         var consent = await loggedIn.Content.ReadAsStringAsync();
         Assert.Contains(title, WebUtility.HtmlDecode(consent));
         Assert.Contains("/account/consent?culture=" + culture, consent);
@@ -223,7 +223,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         var consent = await login.Content.ReadAsStringAsync();
         factory.ChangeUser("ApiKey", "replacement-key");
         var approved = await PostAsync(browser, url, consent, new() { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") });
@@ -244,7 +244,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = apiKey });
+        var login = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = apiKey });
         var html = await login.Content.ReadAsStringAsync();
         Assert.DoesNotContain("name=\"ticket\"", html);
         Assert.DoesNotContain(apiKey, html);
@@ -466,7 +466,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("API キー", WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync()));
         Assert.Null(response.Headers.Location);
@@ -482,7 +482,7 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await browser.GetStringAsync(url);
-        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = password });
+        var response = await PostAsync(browser, url, page, new() { ["decision"] = "login", ["apiKey"] = password });
         var html = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("name=\"ticket\"", html);
         Assert.Contains("ログインできません", WebUtility.HtmlDecode(html));
@@ -495,10 +495,10 @@ public sealed class BridgeFlowTests
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var noCsrf = await browser.PostAsync("/account/login", new FormUrlEncodedContent(new Dictionary<string, string>
-        { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" }));
+        { ["decision"] = "login", ["apiKey"] = "original-key" }));
         Assert.Equal(HttpStatusCode.BadRequest, noCsrf.StatusCode);
         var login = await browser.GetStringAsync(url);
-        var consentResponse = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+        var consentResponse = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         var consent = await consentResponse.Content.ReadAsStringAsync();
         var form = new Dictionary<string, string> { ["decision"] = "approve", ["ticket"] = Hidden(consent, "ticket") };
         var approval = await PostAsync(browser, url, consent, form);
@@ -522,8 +522,7 @@ public sealed class BridgeFlowTests
         var response = await PostAsync(browser, url, page, new()
         {
             ["decision"] = decision,
-            ["loginId"] = "apikey",
-            ["password"] = "wrong"
+            ["apiKey"] = "wrong"
         });
         Assert.DoesNotContain("name=\"ticket\"", await response.Content.ReadAsStringAsync());
         Assert.DoesNotContain("code=", response.Headers.Location?.Query ?? "");
@@ -560,7 +559,7 @@ public sealed class BridgeFlowTests
     }
 
     [Fact]
-    public async Task 別OriginとURL内のトークンとログインIDへのSQL注入を拒否する()
+    public async Task 別OriginとURL内のトークンとAPIキーへのSQL注入を拒否する()
     {
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
@@ -574,8 +573,7 @@ public sealed class BridgeFlowTests
         var injected = await PostAsync(browser, url, page, new()
         {
             ["decision"] = "login",
-            ["loginId"] = "alice' OR 1=1 --",
-            ["password"] = "original-key"
+            ["apiKey"] = "alice' OR 1=1 --"
         });
         Assert.DoesNotContain("name=\"ticket\"", await injected.Content.ReadAsStringAsync());
         Assert.Empty(factory.Upstream.Keys);
@@ -639,34 +637,29 @@ public sealed class BridgeFlowTests
         var url = AuthorizationUrl();
         var login = await browser.GetStringAsync(url);
         for (var i = 0; i < 5; i++)
-            await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "wrong" });
-        var correct = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["loginId"] = "apikey", ["password"] = "original-key" });
+            await PostAsync(browser, url, login, new() { ["decision"] = "login", ["apiKey"] = "wrong" });
+        var correct = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         Assert.DoesNotContain("name=\"ticket\"", await correct.Content.ReadAsStringAsync());
     }
 
     [Fact]
-    public async Task 設定した固定ログインIDだけを受け入れAPIキーを画面へ返さない()
+    public async Task ログインIDなしでAPIキーだけで認証しキーを画面へ返さない()
     {
-        using var factory = new BridgeFactory(apiKeyLoginId: "connector");
+        using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         var url = AuthorizationUrl();
         var page = await PageAsync(browser, url);
-        Assert.Contains("value=\"connector\"", page);
-        var rejected = await PostAsync(browser, url, page, new()
-        {
-            ["decision"] = "login",
-            ["loginId"] = "apikey",
-            ["password"] = "original-key"
-        });
-        Assert.DoesNotContain("name=\"ticket\"", await rejected.Content.ReadAsStringAsync());
+        Assert.DoesNotContain("name=\"loginId\"", page);
+        Assert.DoesNotContain("name=\"password\"", page);
+        Assert.Contains("name=\"apiKey\"", page);
         var accepted = await PostAsync(browser, url, page, new()
         {
             ["decision"] = "login",
-            ["loginId"] = "connector",
-            ["password"] = "original-key"
+            ["apiKey"] = "original-key"
         });
         var html = await accepted.Content.ReadAsStringAsync();
         Assert.Contains("name=\"ticket\"", html);
+        Assert.Contains("alice", html);
         Assert.DoesNotContain("original-key", html);
     }
     private const string Callback = "https://client.example/callback";
@@ -698,8 +691,7 @@ public sealed class BridgeFlowTests
         var loggedIn = await PostAsync(browser, url, page, new()
         {
             ["decision"] = "login",
-            ["loginId"] = "apikey",
-            ["password"] = loginId == "bob" ? "bob-key" : loginId == "shared" ? "shared-key" : "original-key",
+            ["apiKey"] = loginId == "bob" ? "bob-key" : loginId == "shared" ? "shared-key" : "original-key",
             ["keyMode"] = shared ? "shared" : "personal"
         });
         var consent = await loggedIn.Content.ReadAsStringAsync();
@@ -756,16 +748,14 @@ public sealed class BridgeFlowTests
         public string KvsPrefix { get; }
         private readonly bool _shared;
         private readonly bool _dynamicRegistration;
-        private readonly string _apiKeyLoginId;
         private readonly string _issuer;
         private readonly string _upstream;
         public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
-            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string apiKeyLoginId = "apikey", string? kvsPrefix = null, int maxDynamicClients = 100)
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string? kvsPrefix = null, int maxDynamicClients = 100)
         {
             KvsPrefix = kvsPrefix ?? "test-" + Guid.NewGuid().ToString("N");
             _shared = shared;
             _dynamicRegistration = dynamicRegistration;
-            _apiKeyLoginId = apiKeyLoginId;
             _issuer = issuer;
             _upstream = upstream;
             Directory.CreateDirectory(Path.Combine(Root, "App_Data", "Parameters"));
@@ -773,7 +763,6 @@ public sealed class BridgeFlowTests
             File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(new BridgeOptions
             {
                 Enabled = true,
-                ApiKeyLoginId = _apiKeyLoginId,
                 Issuer = _issuer,
                 PleasanterUrl = _upstream,
                 AllowDevelopmentHttp = true,
