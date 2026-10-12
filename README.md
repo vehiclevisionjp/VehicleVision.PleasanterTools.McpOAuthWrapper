@@ -2,6 +2,11 @@
 
 Pleasanter の MCP サーバーを、Claude などの AI アプリから OAuth で接続するための認証ラッパーです。
 
+## マニュアル
+
+導入・設定・使い方・バージョンごとの対応は、
+[McpOAuthWrapper の公開マニュアル](https://pleasanter.docs.vehiclevision.jp/tools/mcp-oauth-wrapper-overview)をご覧ください。
+
 ## インストール
 
 1. Windows または Linux に [ASP.NET Core Runtime 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) をインストールします。
