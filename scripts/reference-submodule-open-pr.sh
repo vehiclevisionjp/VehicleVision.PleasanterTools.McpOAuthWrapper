@@ -17,7 +17,9 @@
 #    PR 本文へ確認先を列挙して、人がやり直す前提にする。
 #
 # 要る環境変数
-#   GH_TOKEN     gh コマンド用
+#   GH_TOKEN     gh コマンド用（ブランチの push と PR の作成。GitHub App のトークン）
+#   ISSUE_GH_TOKEN  Issue の作成だけに使うトークン（GITHUB_TOKEN。既定は GH_TOKEN）。
+#                App に Issues の権限を足さずに済ませるため
 #   LATEST_TAG / LATEST_SHA / CURRENT_TAG / CURRENT_SHA
 #                scripts/reference-submodule-check.sh の出力
 #   BASE_BRANCH  PR の base（既定ブランチ。develop）
@@ -62,7 +64,7 @@ MARKDOWN
 fi
 
 issue_url="$(
-    gh issue create \
+    env GH_TOKEN="${ISSUE_GH_TOKEN:-${GH_TOKEN:-}}" gh issue create \
         --title "参照用サブモジュール Implem.Pleasanter を ${version} へ更新する" \
         --label "1-owner:automation" \
         --label "2-type:dependencies" \
