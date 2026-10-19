@@ -1,5 +1,7 @@
 # Questionnaire と同じ GitHub App を利用して Issue と Draft PR を作る。
 # GITHUB_TOKEN の承認権限は変更しない。App の操作から通常の CI が起動する。
+# Issue の作成だけは GITHUB_TOKEN（issues: write）で行う。App に Issues の権限を足さずに済む
+# （App へ要求するのは contents と pull-requests だけ。release-run.yml と同じ）。
 name: 参照サブモジュールの最新化
 on:
   schedule:
@@ -44,6 +46,10 @@ jobs:
     if: needs.check.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      # Issue の作成だけに使う（GITHUB_TOKEN）。App には Issues の権限を要求しない
+      contents: read
+      issues: write
     steps:
       - name: App の設定を確認する
         env:
@@ -62,7 +68,6 @@ jobs:
           private-key: ${{ secrets.MY_REPO_AUTOMATION_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-          permission-issues: write
       - uses: actions/checkout@v7
         with:
           ref: develop
@@ -70,7 +75,10 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
       - name: ポインタを進めて Issue と Draft PR を作る
         env:
+          # ブランチの push と PR の作成は App のトークン
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # Issue の作成だけは GITHUB_TOKEN（App に Issues の権限を足さないため）
+          ISSUE_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_BRANCH: develop
           LATEST_TAG: ${{ needs.check.outputs.latest_tag }}
           LATEST_SHA: ${{ needs.check.outputs.latest_sha }}
