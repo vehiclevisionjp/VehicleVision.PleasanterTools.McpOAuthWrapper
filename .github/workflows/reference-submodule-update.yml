@@ -1,3 +1,11 @@
+# 参照用サブモジュールが、上流（Implem/Implem.Pleasanter）の main の先頭より遅れていないかを
+# 日次で検査し、遅れていれば Issue と Draft PR を出す。開いている PR があれば同じ PR へコミットを足す。
+# 追従先はリリースタグではなく main の先頭（2026-10-19 に変更。`_reference/README.md`）。
+# main はリリース前の変更を含むので、「どの版か」はコミット SHA と <Version> で言う。
+#
+# Dependabot（gitsubmodule）は使わない。2026-02 にタグの扱いが変わったばかりで、追従するブランチの
+# 決め方と未マージ PR の更新の仕方が公式に書かれておらず、手元で動作を確かめられないため。
+#
 # Questionnaire と同じ GitHub App を利用して Issue と Draft PR を作る。
 # GITHUB_TOKEN の承認権限は変更しない。App の操作から通常の CI が起動する。
 # Issue の作成だけは GITHUB_TOKEN（issues: write）で行う。App に Issues の権限を足さずに済む
@@ -14,12 +22,14 @@ permissions:
   contents: read
 jobs:
   check:
-    name: 上流の最新タグと突き合わせる
+    name: 上流の main と突き合わせる
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       needs_update: ${{ steps.check.outputs.needs_update }}
+      latest_ref: ${{ steps.check.outputs.latest_ref }}
       latest_tag: ${{ steps.check.outputs.latest_tag }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
       latest_sha: ${{ steps.check.outputs.latest_sha }}
       current_tag: ${{ steps.check.outputs.current_tag }}
       current_sha: ${{ steps.check.outputs.current_sha }}
@@ -29,17 +39,18 @@ jobs:
           ref: develop
           submodules: false
           persist-credentials: false
-      - name: 最新リリースタグを調べる
+      - name: 上流の main の先頭を調べる
         id: check
         run: bash scripts/reference-submodule-check.sh
       - name: 検出結果を残す
         env:
           NEEDS_UPDATE: ${{ steps.check.outputs.needs_update }}
           CURRENT_TAG: ${{ steps.check.outputs.current_tag }}
-          LATEST_TAG: ${{ steps.check.outputs.latest_tag }}
+          LATEST_REF: ${{ steps.check.outputs.latest_ref }}
+          LATEST_SHA: ${{ steps.check.outputs.latest_sha }}
         run: |
-          printf '固定位置: `%s`\n\n上流: `%s`\n\n更新が必要: `%s`\n' \
-            "$CURRENT_TAG" "$LATEST_TAG" "$NEEDS_UPDATE" >> "$GITHUB_STEP_SUMMARY"
+          printf '固定位置: `%s`\n\n上流の %s の先頭: `%s`\n\n更新が必要: `%s`\n' \
+            "${CURRENT_TAG:-（タグ無し）}" "$LATEST_REF" "$LATEST_SHA" "$NEEDS_UPDATE" >> "$GITHUB_STEP_SUMMARY"
   update:
     name: GitHub App で更新 PR を作る
     needs: check
@@ -80,7 +91,9 @@ jobs:
           # Issue の作成だけは GITHUB_TOKEN（App に Issues の権限を足さないため）
           ISSUE_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_BRANCH: develop
+          LATEST_REF: ${{ needs.check.outputs.latest_ref }}
           LATEST_TAG: ${{ needs.check.outputs.latest_tag }}
+          LATEST_VERSION: ${{ needs.check.outputs.latest_version }}
           LATEST_SHA: ${{ needs.check.outputs.latest_sha }}
           CURRENT_TAG: ${{ needs.check.outputs.current_tag }}
           CURRENT_SHA: ${{ needs.check.outputs.current_sha }}
