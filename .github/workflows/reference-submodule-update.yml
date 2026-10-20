@@ -10,7 +10,7 @@
 # GITHUB_TOKEN の承認権限は変更しない。App の操作から通常の CI が起動する。
 # Issue の作成だけは GITHUB_TOKEN（issues: write）で行う。App に Issues の権限を足さずに済む
 # （App へ要求するのは contents と pull-requests だけ。release-run.yml と同じ）。
-name: 参照サブモジュールの最新化
+name: Reference Submodule Update
 on:
   schedule:
     - cron: '0 23 * * *'
@@ -22,7 +22,7 @@ permissions:
   contents: read
 jobs:
   check:
-    name: 上流の main と突き合わせる
+    name: check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -52,7 +52,7 @@ jobs:
           printf '固定位置: `%s`\n\n上流の %s の先頭: `%s`\n\n更新が必要: `%s`\n' \
             "${CURRENT_TAG:-（タグ無し）}" "$LATEST_REF" "$LATEST_SHA" "$NEEDS_UPDATE" >> "$GITHUB_STEP_SUMMARY"
   update:
-    name: GitHub App で更新 PR を作る
+    name: update
     needs: check
     if: needs.check.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
