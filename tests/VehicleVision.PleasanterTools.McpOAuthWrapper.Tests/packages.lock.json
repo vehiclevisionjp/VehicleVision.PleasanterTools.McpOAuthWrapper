@@ -48,15 +48,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "4.0.102.10",
-        "contentHash": "ngedi+19mHnszODbUrZLtpU6JeIXVbR/MxslGZPJIcC5YVZcJSZxasnde3+0iboQj9V9bKri7b8D+TXTrOW6Aw=="
+        "resolved": "4.0.102.12",
+        "contentHash": "/wJwMdRT5e9AbqRFfeazbyAbAZijYMDGlLDGAc07Ob2tPdeEUE0dC0zISIdtdWtCu0lV+oWf3qcsevpd7ejn9g=="
       },
       "AWSSDK.SecretsManager": {
         "type": "Transitive",
-        "resolved": "4.0.100.18",
-        "contentHash": "UkA/nt7Ag3lnfHwoOseQV13p+Tu9kt+hvZuZAJn8/QNqmJZnsvo9Q/msibe4oGeQKoZKwO9MJ/jRmE7OwGBaDA==",
+        "resolved": "4.0.100.20",
+        "contentHash": "HwRK5XFaDodhUdB5vcVJJ4o9Wp53tnbww0rr+7QhQ5Oj7L3YD4QBBFW1TeugxQ5PoQoCTNZ9wMOPyLRmz+gJ1A==",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.102.10, 5.0.0)"
+          "AWSSDK.Core": "[4.0.102.12, 5.0.0)"
         }
       },
       "Azure.Core": {
@@ -1338,7 +1338,7 @@
       "vehiclevision.pleasantertools.mcpoauthwrapper": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.SecretsManager": "[4.0.100.18, )",
+          "AWSSDK.SecretsManager": "[4.0.100.20, )",
           "Azure.Identity": "[1.21.0, )",
           "Azure.Security.KeyVault.Secrets": "[4.11.2, )",
           "Google.Cloud.SecretManager.V1": "[2.8.0, )",
