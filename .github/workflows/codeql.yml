@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   analyze:
-    name: CodeQL 解析（C#）
+    name: Analyze (csharp)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
