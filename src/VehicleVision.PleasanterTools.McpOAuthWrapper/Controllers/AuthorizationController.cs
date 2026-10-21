@@ -32,18 +32,33 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     public async Task<IActionResult> Authorize(CancellationToken cancellationToken)
     {
         var request = HttpContext.GetOpenIddictServerRequest()!;
-        if (!ValidRequest(request)) return Reject(Errors.InvalidRequest);
+        if (!ValidRequest(request))
+        {
+            return Reject(Errors.InvalidRequest);
+        }
+
         if (Request.Cookies.TryGetValue(ApprovalCookie, out var approval))
         {
             Response.Cookies.Delete(ApprovalCookie, CookieOptions());
             var identity = Unprotect<ApprovedIdentity>(approval);
             if (identity is null || identity.RequestHash != Hash(Request.QueryString.Value ?? "") || identity.TenantId != options.TenantId)
+            {
                 return Reject(Errors.AccessDenied);
+            }
+
             var consumed = await state.ConsumeConsentAsync(identity.Nonce, cancellationToken);
-            if (!consumed) return Reject(Errors.AccessDenied);
+            if (!consumed)
+            {
+                return Reject(Errors.AccessDenied);
+            }
+
             var user = await users.FindByIdAsync(identity.TenantId, identity.UserId, cancellationToken);
             if (user is null || !user.CanUseApi(options.DatabaseNow) || McpProxy.Stamp(user.ApiKey) != identity.ApiKeyStamp
-                || !await HasKeyAsync(user, identity.KeyOwnerId, cancellationToken, identity.KeyOwnerStamp)) return Reject(Errors.AccessDenied);
+                || !await HasKeyAsync(user, identity.KeyOwnerId, cancellationToken, identity.KeyOwnerStamp))
+            {
+                return Reject(Errors.AccessDenied);
+            }
+
             var claims = new ClaimsIdentity(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             claims.AddClaim(new Claim(Claims.Subject, $"{user.TenantId}:{user.UserId}"));
             claims.AddClaim(new Claim("tenant_id", user.TenantId.ToString()).SetDestinations(Destinations.AccessToken));
@@ -70,23 +85,40 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         CancellationToken cancellationToken)
     {
         var info = Unprotect<AuthorizationInfo>(requestTicket);
-        if (info is null) return BadRequest();
-        if (decision == "deny") return Denied(info);
+        if (info is null)
+        {
+            return BadRequest();
+        }
+
+        if (decision == "deny")
+        {
+            return Denied(info);
+        }
+
         var attemptId = "api-key-ip:" + (HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         if (decision != "login"
             || string.IsNullOrEmpty(apiKey) || apiKey.Length > 1024
             || !await guard.TryAttemptAsync(options.TenantId, attemptId, cancellationToken))
+        {
             return View("Consent", ViewFor(info, text["LoginFailed"].Value));
+        }
+
         var authenticated = await users.FindByApiKeyAsync(options.TenantId, apiKey, cancellationToken);
         if (authenticated is null || !authenticated.VerifyApiKey(apiKey) || !authenticated.CanUseApi(options.DatabaseNow))
+        {
             return View("Consent", ViewFor(info, text["LoginFailed"].Value));
+        }
+
         await guard.ReleaseAsync(options.TenantId, attemptId, cancellationToken);
         var ownerId = keyMode == "shared" ? options.SharedApiKeyUserId ?? 0 : authenticated.UserId;
         var owner = ownerId == authenticated.UserId ? authenticated : ownerId == options.SharedApiKeyUserId
             ? await users.FindByIdAsync(authenticated.TenantId, ownerId, cancellationToken) : null;
         if (owner is null || !owner.CanUseApi(options.DatabaseNow) || string.IsNullOrWhiteSpace(owner.ApiKey))
+        {
             return View("Consent", ViewFor(info,
                 text["MissingKey"].Value));
+        }
+
         var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         await state.CreateConsentAsync(nonce, cancellationToken);
         var approved = new ApprovedIdentity(authenticated.TenantId, authenticated.UserId, ownerId,
@@ -105,8 +137,16 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     {
         var info = Unprotect<AuthorizationInfo>(requestTicket);
         var identity = Unprotect<ApprovedIdentity>(ticket);
-        if (info is null || identity is null) return BadRequest();
-        if (identity.RequestHash != Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query)) return BadRequest();
+        if (info is null || identity is null)
+        {
+            return BadRequest();
+        }
+
+        if (identity.RequestHash != Hash(new Uri("http://localhost" + info.AuthorizationUrl).Query))
+        {
+            return BadRequest();
+        }
+
         if (decision != "approve")
         {
             await state.ConsumeConsentAsync(identity.Nonce, cancellationToken);
@@ -121,14 +161,30 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     public async Task<IActionResult> Exchange(CancellationToken cancellationToken)
     {
         var request = HttpContext.GetOpenIddictServerRequest()!;
-        if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType()) return Reject(Errors.UnsupportedGrantType);
-        if (request.GetResources().Any(resource => resource != options.Resource)) return Reject(Errors.InvalidTarget);
+        if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
+        {
+            return Reject(Errors.UnsupportedGrantType);
+        }
+
+        if (request.GetResources().Any(resource => resource != options.Resource))
+        {
+            return Reject(Errors.InvalidTarget);
+        }
+
         var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         if (result.Principal is not { } principal || !McpProxy.TryIdentity(principal, out var tenant, out var userId, out var ownerId)
-            || tenant != options.TenantId) return Reject(Errors.InvalidGrant);
+            || tenant != options.TenantId)
+        {
+            return Reject(Errors.InvalidGrant);
+        }
+
         var user = await users.FindByIdAsync(tenant, userId, cancellationToken);
         if (user is null || !user.CanUseApi(options.DatabaseNow) || McpProxy.Stamp(user.ApiKey) != principal.FindFirstValue("api_key_stamp")
-            || !await HasKeyAsync(user, ownerId, cancellationToken, principal.FindFirstValue("key_owner_stamp") ?? "")) return Reject(Errors.InvalidGrant);
+            || !await HasKeyAsync(user, ownerId, cancellationToken, principal.FindFirstValue("key_owner_stamp") ?? ""))
+        {
+            return Reject(Errors.InvalidGrant);
+        }
+
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
@@ -137,7 +193,11 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
         && request.GetResources().All(resource => resource == options.Resource);
     private async Task<bool> HasKeyAsync(PleasanterUser user, int ownerId, CancellationToken cancellationToken, string? expectedStamp = null)
     {
-        if (ownerId != user.UserId && ownerId != options.SharedApiKeyUserId) return false;
+        if (ownerId != user.UserId && ownerId != options.SharedApiKeyUserId)
+        {
+            return false;
+        }
+
         var owner = ownerId == user.UserId ? user : await users.FindByIdAsync(user.TenantId, ownerId, cancellationToken);
         return owner is not null && owner.CanUseApi(options.DatabaseNow) && !string.IsNullOrWhiteSpace(owner.ApiKey)
             && (expectedStamp is null || McpProxy.Stamp(owner.ApiKey) == expectedStamp);
@@ -155,7 +215,11 @@ public sealed class AuthorizationController(BridgeOptions options, IPleasanterUs
     private string Protect<T>(T data) => Protector<T>().Protect(JsonSerializer.Serialize(data), TimeSpan.FromMinutes(5));
     private T? Unprotect<T>(string? value)
     {
-        if (string.IsNullOrEmpty(value) || value.Length > 16384) return default;
+        if (string.IsNullOrEmpty(value) || value.Length > 16384)
+        {
+            return default;
+        }
+
         try { return JsonSerializer.Deserialize<T>(Protector<T>().Unprotect(value)); }
         catch (Exception ex) when (ex is CryptographicException or JsonException or ArgumentException) { return default; }
     }

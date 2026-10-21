@@ -23,39 +23,75 @@ public static class BridgeSetup
         var rds = rdsConfig.Get<RdsOptions>() ?? throw new InvalidOperationException("Rds.json が必要です。");
         if (rds.Provider != "Local" || string.IsNullOrWhiteSpace(rds.UserConnectionString)
             || rds.UserConnectionString.Contains('#') || rds.SqlCommandTimeOut is < 1 or > 120)
+        {
             throw new InvalidOperationException("Rds.json に読み取り専用 UserConnectionString と 1～120 秒のタイムアウトを設定してください。");
+        }
+
         if (rds.Dbms.ToLowerInvariant() is not ("postgresql" or "sqlserver" or "mysql"))
+        {
             throw new InvalidOperationException("Dbms は PostgreSQL、SQLServer、MySQL のいずれかです。");
+        }
+
         if (options.TenantId <= 0 || options.SharedApiKeyUserId is <= 0)
+        {
             throw new InvalidOperationException("TenantId と共通キーの所有者 ID を確認してください。");
+        }
+
         if (options.MaxDynamicClients is < 1 or > 10000)
+        {
             throw new InvalidOperationException("MaxDynamicClients は 1～10000 で設定してください。");
+        }
+
         _ = TimeZoneInfo.FindSystemTimeZoneById(options.DatabaseTimeZoneId);
         var allowHttp = options.AllowDevelopmentHttp && builder.Environment.IsDevelopment();
         if (options.AllowDevelopmentHttp && !builder.Environment.IsDevelopment())
+        {
             throw new InvalidOperationException("HTTP の許可は Development 環境専用です。");
+        }
+
         options.Issuer = ValidateUrl(options.Issuer, allowHttp);
         if (new Uri(options.Issuer).AbsolutePath != "/")
+        {
             throw new InvalidOperationException("Issuer は専用ホストのルート URL を指定してください。");
+        }
+
         options.PleasanterUrl = ValidateUrl(options.PleasanterUrl, allowHttp);
         foreach (var uri in options.AllowedRedirectUris.Concat(options.Clients.SelectMany(c => c.RedirectUris)))
+        {
             ValidateRedirect(uri, allowHttp);
-        foreach (var origin in options.AllowedOrigins) ValidateUrl(origin.TrimEnd('/') + "/", allowHttp);
+        }
+
+        foreach (var origin in options.AllowedOrigins)
+        {
+            ValidateUrl(origin.TrimEnd('/') + "/", allowHttp);
+        }
         // IIS 統合が設定する既定の転送元を、空の信頼一覧で消さない。
-        if (options.TrustedProxyAddresses.Count > 0) builder.Services.Configure<ForwardedHeadersOptions>(forwarded =>
+        if (options.TrustedProxyAddresses.Count > 0)
+        {
+            builder.Services.Configure<ForwardedHeadersOptions>(forwarded =>
         {
             forwarded.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
             forwarded.ForwardLimit = 1;
             forwarded.KnownProxies.Clear();
             forwarded.KnownIPNetworks.Clear();
             foreach (var address in options.TrustedProxyAddresses)
+            {
                 forwarded.KnownProxies.Add(System.Net.IPAddress.Parse(address));
+            }
+
             forwarded.AllowedHosts.Add(new Uri(options.Issuer).Host);
         });
+        }
+
         if (!options.Clients.Any() && !options.AllowDynamicClientRegistration)
+        {
             throw new InvalidOperationException("OAuth クライアントまたは許可済み redirect URI 付き動的登録を設定してください。");
+        }
+
         if (options.AllowDynamicClientRegistration && options.AllowedRedirectUris.Count == 0)
+        {
             throw new InvalidOperationException("動的登録には AllowedRedirectUris の明示的な許可一覧が必要です。");
+        }
 
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton(rds);
@@ -63,13 +99,19 @@ public static class BridgeSetup
         builder.Services.AddScoped<IPleasanterUserStore, PleasanterUserStore>();
         var redis = options.StateStore.Equals("Redis", StringComparison.OrdinalIgnoreCase);
         if (!redis && !options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("StateStore は Sqlite または Redis を指定してください。");
+        }
+
         Lazy<ConnectionMultiplexer>? connection = null;
         var protection = builder.Services.AddDataProtection().SetApplicationName("Pleasanter.McpOAuthWrapper");
         if (redis)
         {
             if (string.IsNullOrWhiteSpace(options.KvsConnectionString) || !System.Text.RegularExpressions.Regex.IsMatch(options.KvsKeyPrefix, "^[A-Za-z0-9:_-]{1,128}$"))
+            {
                 throw new InvalidOperationException("KvsConnectionString と専用の KvsKeyPrefix を指定してください。");
+            }
+
             connection = new Lazy<ConnectionMultiplexer>(() =>
             {
                 try
@@ -111,7 +153,10 @@ public static class BridgeSetup
         builder.Services.AddOpenIddict()
             .AddCore(core =>
             {
-                if (!redis) core.UseEntityFrameworkCore().UseDbContext<OAuthState>();
+                if (!redis)
+                {
+                    core.UseEntityFrameworkCore().UseDbContext<OAuthState>();
+                }
                 else
                 {
                     core.DisableEntityCaching();
@@ -133,19 +178,25 @@ public static class BridgeSetup
                 server.RegisterResources(new Uri(options.Resource));
                 server.Configure(configuration => configuration.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain));
                 if (options.AllowDynamicClientRegistration)
+                {
                     server.AddEventHandler<OpenIddict.Server.OpenIddictServerEvents.HandleConfigurationRequestContext>(handler =>
                         handler.UseInlineHandler(context =>
                         {
                             context.Metadata["registration_endpoint"] = new Uri(new Uri(options.Issuer), "connect/register").AbsoluteUri;
                             return ValueTask.CompletedTask;
                         }));
+                }
+
                 server.SetAccessTokenLifetime(TimeSpan.FromMinutes(15));
                 server.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(2));
                 server.SetRefreshTokenLifetime(TimeSpan.FromDays(1));
                 server.UseReferenceAccessTokens().UseReferenceRefreshTokens();
                 server.AddSigningCertificate(signing).AddEncryptionCertificate(encryption);
                 var asp = server.UseAspNetCore().EnableAuthorizationEndpointPassthrough().EnableTokenEndpointPassthrough();
-                if (allowHttp) asp.DisableTransportSecurityRequirement();
+                if (allowHttp)
+                {
+                    asp.DisableTransportSecurityRequirement();
+                }
             })
             .AddValidation(validation =>
             {
@@ -180,7 +231,10 @@ public static class BridgeSetup
     {
         await using var scope = app.Services.CreateAsyncScope();
         if (options.StateStore.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
             await scope.ServiceProvider.GetRequiredService<OAuthState>().Database.EnsureCreatedAsync();
+        }
+
         var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
         foreach (var client in options.Clients)
         {
@@ -190,8 +244,15 @@ public static class BridgeSetup
                 try
                 {
                     var existing = await manager.FindByClientIdAsync(client.ClientId);
-                    if (existing is null) await manager.CreateAsync(descriptor);
-                    else await manager.UpdateAsync(existing, descriptor);
+                    if (existing is null)
+                    {
+                        await manager.CreateAsync(descriptor);
+                    }
+                    else
+                    {
+                        await manager.UpdateAsync(existing, descriptor);
+                    }
+
                     break;
                 }
                 catch (OpenIddictExceptions.ConcurrencyException) when (retry < 2) { }
@@ -203,7 +264,11 @@ public static class BridgeSetup
     {
         var result = new OpenIddictApplicationDescriptor
         { ClientId = id, DisplayName = name, ClientType = ClientTypes.Public, ConsentType = ConsentTypes.Explicit };
-        foreach (var uri in redirects) result.RedirectUris.Add(new Uri(uri));
+        foreach (var uri in redirects)
+        {
+            result.RedirectUris.Add(new Uri(uri));
+        }
+
         result.Permissions.UnionWith([Permissions.Endpoints.Authorization, Permissions.Endpoints.Token,
             Permissions.Endpoints.Revocation, Permissions.GrantTypes.AuthorizationCode, Permissions.GrantTypes.RefreshToken,
             Permissions.ResponseTypes.Code, Permissions.Prefixes.Scope + "mcp", Permissions.Prefixes.Resource + resource]);
@@ -216,7 +281,10 @@ public static class BridgeSetup
         var fromFile = !string.IsNullOrWhiteSpace(path);
         var fromSecret = !string.IsNullOrWhiteSpace(base64);
         if (fromFile == fromSecret)
+        {
             throw new InvalidOperationException($"本番の{purpose}証明書は Path または Base64 のどちらか一方を設定してください。");
+        }
+
         X509Certificate2 certificate;
         byte[]? pfx = null;
         try
@@ -228,8 +296,10 @@ public static class BridgeSetup
                 certificate = X509CertificateLoader.LoadPkcs12(pfx, password, X509KeyStorageFlags.EphemeralKeySet);
             }
             else
+            {
                 certificate = X509CertificateLoader.LoadPkcs12FromFile(Path.GetFullPath(path, root), password,
                     X509KeyStorageFlags.EphemeralKeySet);
+            }
         }
         catch (Exception ex) when (ex is FormatException or CryptographicException or IOException or ArgumentException)
         {
@@ -238,7 +308,10 @@ public static class BridgeSetup
         }
         finally
         {
-            if (pfx is not null) CryptographicOperations.ZeroMemory(pfx);
+            if (pfx is not null)
+            {
+                CryptographicOperations.ZeroMemory(pfx);
+            }
         }
         if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
             || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
@@ -254,7 +327,9 @@ public static class BridgeSetup
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.UserInfo)
             || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment)
             || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback)))
+        {
             throw new InvalidOperationException("接続 URL は HTTPS URL が必要です。HTTP はローカル開発専用です。");
+        }
         // redirect URI は完全一致が必要なため、この補完の対象にしない。
         return value.EndsWith('/') ? value : value + "/";
     }
@@ -264,6 +339,8 @@ public static class BridgeSetup
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.UserInfo)
             || !string.IsNullOrEmpty(uri.Fragment)
             || (uri.Scheme != "https" && !(allowHttp && uri.Scheme == "http" && uri.IsLoopback)))
+        {
             throw new InvalidOperationException("redirect URI は HTTPS の完全一致で登録してください。");
+        }
     }
 }

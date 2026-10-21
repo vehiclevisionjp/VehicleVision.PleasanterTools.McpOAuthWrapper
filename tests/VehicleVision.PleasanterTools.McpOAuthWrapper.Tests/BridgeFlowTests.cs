@@ -22,7 +22,11 @@ public sealed class BridgeFlowTests
         var prefix = "test-" + Guid.NewGuid().ToString("N");
         Tokens tokens;
         using (var first = new BridgeFactory(kvsPrefix: prefix))
-        using (var browser = first.Browser()) tokens = await AuthorizeAsync(browser);
+        using (var browser = first.Browser())
+        {
+            tokens = await AuthorizeAsync(browser);
+        }
+
         using var second = new BridgeFactory(kvsPrefix: prefix);
         using var secondBrowser = second.Browser();
         Assert.Equal(HttpStatusCode.OK, (await secondBrowser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode);
@@ -49,7 +53,11 @@ public sealed class BridgeFlowTests
         var attempts = await Task.WhenAll(Enumerable.Range(0, 10).Select(i => (i % 2 == 0 ? left : right).TryAttemptAsync("attempt", CancellationToken.None)));
         Assert.Equal(5, attempts.Count(x => x));
         // 成功した試行を戻しても、過去の失敗は残る。
-        for (var i = 0; i < 5; i++) Assert.True(await left.TryAttemptAsync("release", CancellationToken.None));
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.True(await left.TryAttemptAsync("release", CancellationToken.None));
+        }
+
         await right.ReleaseAsync("release", CancellationToken.None);
         Assert.True(await left.TryAttemptAsync("release", CancellationToken.None));
         Assert.False(await right.TryAttemptAsync("release", CancellationToken.None));
@@ -132,7 +140,10 @@ public sealed class BridgeFlowTests
     {
         public KvsFactAttribute()
         {
-            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION"))) Skip = "KVS 実機試験の接続先が未設定です。";
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION")))
+            {
+                Skip = "KVS 実機試験の接続先が未設定です。";
+            }
         }
     }
     [Fact]
@@ -356,7 +367,11 @@ public sealed class BridgeFlowTests
         using var factory = new BridgeFactory();
         using var browser = factory.Browser();
         var state = factory.Services.GetRequiredService<IBridgeState>();
-        for (var i = 0; i < 5; i++) Assert.True(await state.TryAttemptAsync("release", CancellationToken.None));
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.True(await state.TryAttemptAsync("release", CancellationToken.None));
+        }
+
         await state.ReleaseAsync("release", CancellationToken.None);
         Assert.True(await state.TryAttemptAsync("release", CancellationToken.None));
         Assert.False(await state.TryAttemptAsync("release", CancellationToken.None));
@@ -637,7 +652,10 @@ public sealed class BridgeFlowTests
         var url = AuthorizationUrl();
         var login = await browser.GetStringAsync(url);
         for (var i = 0; i < 5; i++)
+        {
             await PostAsync(browser, url, login, new() { ["decision"] = "login", ["apiKey"] = "wrong" });
+        }
+
         var correct = await PostAsync(browser, url, login, new() { ["decision"] = "login", ["apiKey"] = "original-key" });
         Assert.DoesNotContain("name=\"ticket\"", await correct.Content.ReadAsStringAsync());
     }
