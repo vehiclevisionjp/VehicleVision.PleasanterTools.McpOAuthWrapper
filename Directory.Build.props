@@ -11,6 +11,9 @@
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <VersionPrefix>0.3.3</VersionPrefix>
+    <Company>PMC Co., Ltd. IT Solution Div.</Company>
+    <Authors>PMC Co., Ltd. IT Solution Div.</Authors>
+    <Copyright>Copyright (C) PMC Co., Ltd. IT Solution Div.</Copyright>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.McpOAuthWrapper</RepositoryUrl>
   </PropertyGroup>
