@@ -56,3 +56,6 @@ OAuth の状態は SQLite（既定）または Redis／Valkey 互換 KVS に保�
 ## ライセンス
 
 AGPL v3（AGPL-3.0-or-later）。[LICENSE](LICENSE) と [NOTICE](NOTICE) を参照してください。
+
+貢献の取り込みには [CLA（草案）](CLA.md) への署名が必要です。
+手続きは [貢献のしかた](CONTRIBUTING.md)、提供条件は [ライセンスについて](LICENSING.md) を参照してください。
