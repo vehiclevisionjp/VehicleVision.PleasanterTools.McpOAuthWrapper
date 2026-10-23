@@ -7,6 +7,13 @@ https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Questionnaire
 AGPL-3.0-or-later（同リポジトリの OSS ライセンスによる）
 参照日: 2026-10-06
 
+CLA 草案・署名フォーム・署名確認ワークフローは次を基にしています。
+VehicleVision.PleasanterTools.Template
+https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Template
+AGPL-3.0-or-later
+参照コミット: 60ad8ae1913e6ff663d2df1a3acd6143bd3fe3f7
+参照日: 2026-10-22
+
 参照専用サブモジュール:
 Implem.Pleasanter / Implem Inc. / GNU AGPL v3
 https://github.com/Implem/Implem.Pleasanter
