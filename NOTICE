@@ -38,6 +38,16 @@ Npgsql — PostgreSQL License
 https://github.com/npgsql/npgsql/blob/main/LICENSE
 Microsoft.Data.SqlClient — MIT
 https://github.com/dotnet/SqlClient/blob/main/LICENSE
+Microsoft.Data.SqlClient.SNI.runtime 7.1.0 — Microsoft Software License Terms（MICROSOFT.DATA.SQLCLIENT.SNI LIBRARY）
+MIT・BSD・Apache-2.0 ではなく、Microsoft 独自の許諾です。Microsoft.Data.SqlClient が推移的に伴う、Windows 向けのネイティブライブラリで、
+SQL Server に接続する配置物に含まれます。
+https://www.nuget.org/packages/Microsoft.Data.SqlClient.SNI.runtime/7.1.0
+再頒布の条件（出典: パッケージ 7.1.0 内の LICENSE.txt。Questionnaire の NOTICE と同じ出典で、2026-10-27 に確認した内容）:
+- アプリの一部としてのみ頒布する（単体で頒布しない）
+- 頒布先に、逆コンパイルの禁止・表示の保全・単体での再配布の禁止・保証の否認・責任の制限・輸出規制の遵守など、
+  この許諾と同程度に守る条件へ同意させる
+- アプリの頒布・利用に関する請求から Microsoft を補償する（改変していない部品だけに基づく請求を除く）
+上の条件の LICENSING.md への反映と、法務の確認は未了です。条件の正本は、パッケージ内の LICENSE.txt です。
 MySqlConnector — MIT
 https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE
 
