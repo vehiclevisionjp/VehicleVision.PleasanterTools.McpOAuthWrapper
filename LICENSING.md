@@ -86,7 +86,7 @@ SPDX 表記： `AGPL-3.0-or-later OR LicenseRef-PMC-Commercial`
 ## 依存ソフトウェアについて
 
 本ソフトウェアが利用する OSS は **寛容ライセンス（MIT / BSD 系 / Apache-2.0 など）** に
-限定します。直接依存の一覧と各ライセンスは [`NOTICE`](NOTICE) を参照してください。
+限定します。直接依存の一覧と各ライセンスは [`NOTICE`](NOTICE) を、配布物に入る部品のライセンス全文は [`ThirdPartyNotices.txt`](ThirdPartyNotices.txt) を参照してください。
 
 これは意図的な制約です。**コピーレフト系（GPL / AGPL / SSPL 等）の依存が 1 つでも入ると、
 商用ライセンスでの提供ができなくなります。** 依存を追加する際は必ずライセンスを確認してください。
