@@ -29,7 +29,7 @@ Issue → `develop` から作業ブランチ → 実装と検証 → push → Dr
 
 日本語のコミットを意図ごとに分け、本文に理由と検証結果を書く。並行作業は `.worktrees/` 内の `git worktree`、一時成果物は `temp/yyyyMMdd_内容/` に置く。
 
-共通規約の編集元はこのファイル。`scripts/sync-agents.sh` で AGENTS.md を再生成し、`--check` で確認する。Claude のローカル許可や秘密は追跡しない。外部メモリが必要なら `.ClaudeMemory` 接尾辞の Internal リポジトリを使う。
+共通規約の編集元はこのファイル。`scripts/sync-agents.sh` で AGENTS.md を再生成し、`--check` で確認する。Claude のローカル許可や秘密は追跡しない。外部メモリが必要なら Internal の `VehicleVision.PleasanterTools.ClaudeMemory` に `McpOAuthWrapper/` フォルダを作る。
 
 依存追加時は一次情報でライセンスを確認し、NOTICE とロックファイルを更新する。
 依存 OSS は寛容ライセンス（MIT / BSD 系 / Apache-2.0 など）に限定する。コピーレフト系が入ると商用側を提供できなくなる（例外は SNI.runtime のみ。LICENSING.md）。
