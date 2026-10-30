@@ -76,6 +76,8 @@ coverlet.collector — MIT
 https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE
 
 推移的依存と実際の版は各プロジェクトの packages.lock.json に記録する。
+配布 ZIP に入る NuGet パッケージ（推移的依存を含む）の著作権表示とライセンス全文は ThirdPartyNotices.txt に収め、ZIP に同梱する。
+Microsoft.Data.SqlClient.SNI.runtime の Microsoft Software License Terms の全文もそこにある。
 
 画面ビルド用（実行環境へツールを配布しない）:
 - Sass — MIT: https://github.com/sass/dart-sass/blob/main/LICENSE
