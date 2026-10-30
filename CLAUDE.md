@@ -10,4 +10,4 @@ Pleasanter 本体は Git で追跡しない参照専用ソースであり、実�
 CI では取得せず、文書には確認した完全な SHA・固定リンク・参照日を残す。実機未検証なら明記する。
 
 外部メモリは現時点では使っていない。
-必要なら `.ClaudeMemory` 接尾辞の Internal リポジトリに共有し、正式な規約は共通指示へ残す。
+必要なら Internal の `VehicleVision.PleasanterTools.ClaudeMemory` に `McpOAuthWrapper/` フォルダを作って共有し、正式な規約は共通指示へ残す。
