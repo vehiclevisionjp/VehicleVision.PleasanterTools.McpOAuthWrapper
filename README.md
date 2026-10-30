@@ -64,5 +64,5 @@ OAuth の状態は SQLite（既定）または Redis／Valkey 互換 KVS に保�
 
 依存の条件は [NOTICE](NOTICE) を参照してください。
 
-貢献の取り込みには [CLA（草案）](CLA.md) への署名が必要です。
+貢献の取り込みには [CLA](CLA.md) への署名が必要です。
 手続きは [貢献のしかた](CONTRIBUTING.md)、現在の提供条件は [ライセンスについて](LICENSING.md) を参照してください。

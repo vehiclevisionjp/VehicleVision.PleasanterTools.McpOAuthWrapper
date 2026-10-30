@@ -123,4 +123,3 @@ Microsoft 独自の許諾です。本体が直接依存する `Microsoft.Data.Sq
 後から気付いても、当人全員から同意を集め直すか、該当コードを書き直すしかない。
 
 手続きは [`CLA.md`](CLA.md) と [`CONTRIBUTING.md`](CONTRIBUTING.md) を参照してください。
-CLA は法務確認前の草案です。正式な同意の受付前に法務確認を受けてください。
