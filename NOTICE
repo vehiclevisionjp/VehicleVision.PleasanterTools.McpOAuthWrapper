@@ -1,4 +1,5 @@
 VehicleVision.PleasanterTools.McpOAuthWrapper
+Copyright (C) PMC Co., Ltd. IT Solution Div.
 SPDX-License-Identifier: AGPL-3.0-or-later OR LicenseRef-PMC-Commercial
 
 開発運用と Actions の構成、および指示同期・参照更新スクリプトは次を参考にしています。
