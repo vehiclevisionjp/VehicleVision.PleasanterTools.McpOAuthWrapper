@@ -16,8 +16,8 @@ Scope
   Zen Kaku Gothic New; subsets in woff2 form), licensed under the SIL Open Font
   License 1.1. The license texts and copyright notices are in
   wwwroot/assets/fonts/licenses/ZenMaruGothic-OFL.txt and ZenKakuGothicNew-OFL.txt,
-  which are shipped next to the fonts; the origin (DesignReference 2.3, commit
-  080f9b3) is in fonts/SOURCE.json.
+  which are shipped next to the fonts; the origin (DesignReference 2.4, commit
+  0730ea9) is in fonts/SOURCE.json.
 - Not covered: the .NET runtime and ASP.NET Core shared framework (the ZIP
   requires a separately installed .NET 10 runtime and does not contain it);
   development, build and test tools (Sass, TypeScript, esbuild, ESLint,
