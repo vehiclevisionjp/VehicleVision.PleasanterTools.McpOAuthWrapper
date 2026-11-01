@@ -1,4 +1,4 @@
-# Template の方式。PR のコードは実行せず、base 側の署名一覧だけを見る。
+# Questionnaire の方式。PR のコードは実行せず、base 側の署名一覧だけを見る。
 # 外部の CLA サービスへ作者の情報を渡さない。
 name: CLA Check
 
@@ -20,6 +20,7 @@ concurrency:
 jobs:
   cla:
     name: cla
+    # internal の Template 自身は対象外。新しい公開リポジトリではそのまま動く。
     if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -83,10 +84,10 @@ jobs:
               body:
                 `${marker}\n@${author} さん、貢献をありがとうございます。\n\n` +
                 '**取り込む前に CLA への署名をお願いします。**\n\n' +
-                '将来の商用提供も含め、貢献を再許諾する権利を確認するためです。\n\n' +
-                `1. [CLA.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/develop/CLA.md) を読む\n` +
+                'AGPL と商用のデュアルライセンスで提供するため、貢献を再許諾する権利を確認するためです。\n\n' +
+                '1. [CLA.md](../blob/develop/CLA.md) を読む\n' +
                 '2. 「CLA への署名」の Issue を立てる\n' +
                 '3. 管理者が確認して署名一覧へ追記します\n\n' +
                 '**会社の業務として貢献する場合は、法人用の署名も要ります。**\n\n' +
-                `詳しくは [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/develop/CONTRIBUTING.md) を見てください。`,
+                '詳しくは [CONTRIBUTING.md](../blob/develop/CONTRIBUTING.md) を見てください。',
             });
