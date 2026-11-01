@@ -65,11 +65,13 @@ https://github.com/oracle/oci-dotnet-sdk/blob/master/LICENSE.txt
 Universal Permissive License (UPL), Version 1.0:
 https://oss.oracle.com/licenses/upl/
 
-同梱の書体（配布物の wwwroot/assets/fonts/。DesignReference 第 2.2 版・コミット 73943fd から、文字を絞った woff2 を複写。出どころは同フォルダの SOURCE.json）:
-Noto Sans CJK JP（Regular・Bold）/ Noto Sans Mono CJK JP（Regular・ASCII のみ） — SIL OFL 1.1
-https://github.com/notofonts/noto-cjk
-ライセンス全文: wwwroot/assets/fonts/licenses/NotoCJK-OFL.txt（配布物にも同梱）
-Myrica M（コード用）は同梱しない（コード表示のある画面が無いため）。同フォルダの licenses/Myrica-* は、DesignReference の一式をそのまま複写したもの。
+同梱の書体（配布物の wwwroot/assets/fonts/。DesignReference 第 2.3 版・コミット 080f9b3 から、文字を絞った woff2 を複写。出どころは同フォルダの SOURCE.json）:
+Zen Maru Gothic（Bold）/ Zen Kaku Gothic New（Regular・Bold） — SIL OFL 1.1
+Copyright 2021 The Zen Maru Gothic Project Authors（https://github.com/googlefonts/zen-marugothic）
+Copyright 2022 The Zen Kaku Gothic Project Authors（https://github.com/googlefonts/zen-kakugothic）
+ライセンス全文: wwwroot/assets/fonts/licenses/ZenMaruGothic-OFL.txt・ZenKakuGothicNew-OFL.txt（配布物にも同梱）
+上の書体は、使う文字だけに絞って（サブセット化）woff2 に変換している。書体名・デザインは変えていない。このアプリのライセンスとは別に、SIL OFL 1.1 で提供されている。
+Zen Old Mincho・Myrica M（コード用）・Material Symbols は同梱しない（この画面で使わないため）。同フォルダの licenses/ にある ZenOldMincho-*・Myrica-*・MaterialSymbols-* は、DesignReference の一式をそのまま複写したもの。
 
 テスト用の直接依存（配布する Web アプリには含めない）:
 Microsoft.AspNetCore.Mvc.Testing — MIT（上記 ASP.NET Core）
