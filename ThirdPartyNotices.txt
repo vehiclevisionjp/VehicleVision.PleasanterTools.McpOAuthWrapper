@@ -12,11 +12,12 @@ Scope
   libraries are copied into the publish output. The versions written next to
   each component are the ones locked in
   src/VehicleVision.PleasanterTools.McpOAuthWrapper/packages.lock.json.
-- Also redistributed: the web fonts in wwwroot/assets/fonts/ (Noto Sans CJK JP,
-  Noto Sans Mono CJK JP; subsets in woff2 form), licensed under the SIL Open Font
-  License 1.1. The license text and copyright notice are in
-  wwwroot/assets/fonts/licenses/NotoCJK-OFL.txt, which is shipped next to the fonts;
-  the origin (DesignReference 2.2, commit 73943fd) is in fonts/SOURCE.json.
+- Also redistributed: the web fonts in wwwroot/assets/fonts/ (Zen Maru Gothic,
+  Zen Kaku Gothic New; subsets in woff2 form), licensed under the SIL Open Font
+  License 1.1. The license texts and copyright notices are in
+  wwwroot/assets/fonts/licenses/ZenMaruGothic-OFL.txt and ZenKakuGothicNew-OFL.txt,
+  which are shipped next to the fonts; the origin (DesignReference 2.3, commit
+  080f9b3) is in fonts/SOURCE.json.
 - Not covered: the .NET runtime and ASP.NET Core shared framework (the ZIP
   requires a separately installed .NET 10 runtime and does not contain it);
   development, build and test tools (Sass, TypeScript, esbuild, ESLint,
