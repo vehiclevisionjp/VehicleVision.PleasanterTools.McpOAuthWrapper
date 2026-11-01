@@ -1,0 +1,230 @@
+{
+  "_comment": "make-app-fonts.py が作る。fonts/app/ の出どころと中身(元の woff2 の SHA-256・書体の版・区画ごとのサイズと SHA-256)。",
+  "fonts": [
+    {
+      "family": "Noto Sans CJK JP",
+      "weight": 400,
+      "source": "fonts/NotoSansCJKjp-Regular.woff2",
+      "sourceSha256": "74a12fdf27fd02bb0161144b71bff4dca2fbff22c3f4d72ef657218dfaa45698",
+      "version": "Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603",
+      "copyright": "© 2014-2021 Adobe (http://www.adobe.com/).",
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "NotoSansCJKjp-Regular.latin.woff2",
+          "chars": 279,
+          "bytes": 16200,
+          "sha256": "b3330c305c82eb96f7f5e13e483be043e5c69b47ffe3d1e6ea2b0eefae75bb3c",
+          "minimum": true
+        },
+        {
+          "name": "kana",
+          "file": "NotoSansCJKjp-Regular.kana.woff2",
+          "chars": 783,
+          "bytes": 59132,
+          "sha256": "e7357134f1c271f01e37679b1966b085c1164d972b212747b3ed00786d89a0e5",
+          "minimum": true
+        },
+        {
+          "name": "jis1",
+          "file": "NotoSansCJKjp-Regular.jis1.woff2",
+          "chars": 2965,
+          "bytes": 946436,
+          "sha256": "dc1520f12d3da6efa0e5c80e92eb121897985a2faa7512f9c79a48c9fcfdcdc2",
+          "minimum": true
+        },
+        {
+          "name": "jis2a",
+          "file": "NotoSansCJKjp-Regular.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 352880,
+          "sha256": "977d58f9f64fa08b263fd97c7ca2ac720451f7bb0d97bac7d8b25936842eded7",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "NotoSansCJKjp-Regular.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 461884,
+          "sha256": "f33a32a489af2c37b6fcd9dca71193d58ce8303051c1cadfd4e48dfb0d89b664",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "NotoSansCJKjp-Regular.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 484188,
+          "sha256": "e01ba54376b650babd7b43a2d722039b4ff4094f4d12e345e6af39d7e937421b",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "NotoSansCJKjp-Regular.ext.woff2",
+          "chars": 360,
+          "bytes": 123192,
+          "sha256": "fc4498c2be84e1bd8a42da9ee7956679061805d709b38b6ea471724023cbeefe",
+          "minimum": false
+        }
+      ]
+    },
+    {
+      "family": "Noto Sans CJK JP",
+      "weight": 700,
+      "source": "fonts/NotoSansCJKjp-Bold.woff2",
+      "sourceSha256": "ffac5346492ffee384517ba68bd0ea652289d0d9a96f0c63e81a63c48add2ac8",
+      "version": "Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603",
+      "copyright": "© 2014-2021 Adobe (http://www.adobe.com/).",
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "NotoSansCJKjp-Bold.latin.woff2",
+          "chars": 279,
+          "bytes": 16388,
+          "sha256": "e6659e71480d1d9b1b405624489b9431b57292e1c23304a4d9cc4801dd412e36",
+          "minimum": true
+        },
+        {
+          "name": "kana",
+          "file": "NotoSansCJKjp-Bold.kana.woff2",
+          "chars": 783,
+          "bytes": 58936,
+          "sha256": "bee64ed4e21cef1ede814b59bde451108348ab51f2ad8ede9d703dc38580eb33",
+          "minimum": true
+        },
+        {
+          "name": "jis1",
+          "file": "NotoSansCJKjp-Bold.jis1.woff2",
+          "chars": 2965,
+          "bytes": 969396,
+          "sha256": "05877cbaa4b5dbabc5ba1b3ef6ef0fea9bf84cd52263c2a42c862560c5cf2a52",
+          "minimum": true
+        },
+        {
+          "name": "jis2a",
+          "file": "NotoSansCJKjp-Bold.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 359436,
+          "sha256": "963dd6b6f4b7c64e7ce532b817b01f19c4102cb227e43ed8099f2456a3f054ad",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "NotoSansCJKjp-Bold.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 476112,
+          "sha256": "32ba30a9b35c532037c58d9d0c352805e99b8d8bacd7420e96692c21691177cf",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "NotoSansCJKjp-Bold.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 498076,
+          "sha256": "72a88cb491834a83199a735b37801e41a35c983431e97690b5af140c9429087b",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "NotoSansCJKjp-Bold.ext.woff2",
+          "chars": 360,
+          "bytes": 126316,
+          "sha256": "a24d7c24c1ddc70b2dfe8ea1c3b6ccd28f2e298d75c5997295ab368e9b8cb12a",
+          "minimum": false
+        }
+      ]
+    },
+    {
+      "family": "Noto Sans Mono CJK JP",
+      "weight": 400,
+      "source": "fonts/NotoSansMonoCJKjp-Regular.woff2",
+      "sourceSha256": "06babfb7a6878f385fdc427dde796e7e0209ea6d541ca849b339f868607ac46f",
+      "version": "Version 2.004;hotconv 1.0.118;makeotfexe 2.5.65603",
+      "copyright": "© 2014-2021 Adobe (http://www.adobe.com/).",
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "NotoSansMonoCJKjp-Regular.latin.woff2",
+          "chars": 279,
+          "bytes": 14244,
+          "sha256": "48a1cbf49455db1ea8e8d4ee54810d7de487451d2fc6e9fe66283ff3eb24aa9e",
+          "minimum": true
+        }
+      ]
+    },
+    {
+      "family": "Myrica M",
+      "weight": 400,
+      "source": "fonts/MyricaM.woff2",
+      "sourceSha256": "eb1f07e11b7dc19a86b2e8e37190872c7d1b59199a86b5a1169d21ff1630ed15",
+      "version": "Version 2.012.20180119 ",
+      "copyright": "Copyright (c) 2006-2012 Raph Levien (Inconsolata)\nCopyright (c) 2013 M+ FONTS PROJECT (M+)\nCopyright (c) 2013 itouhiro (Migu)\nCopyright (c) 2014 MM (GenShinGothic)\nCopyright (c) 2014 Adobe Systems Incorporated. (NotoSansJP)\nLicenses:\nSIL Open Font License Version 1.1 (http://scripts.sil.org/ofl)\n",
+      "group": "code",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "MyricaM.latin.woff2",
+          "chars": 578,
+          "bytes": 24148,
+          "sha256": "e504db3a14092691f4f3c7270cf3d01a4ec3f706250bc364f11e8a91ef3871d9",
+          "minimum": false
+        },
+        {
+          "name": "kana",
+          "file": "MyricaM.kana.woff2",
+          "chars": 732,
+          "bytes": 43564,
+          "sha256": "f9ccc5766d28336d04ff407431f75a220f86dd89de2dcfa26bc2103af7bfb103",
+          "minimum": false
+        },
+        {
+          "name": "jis1",
+          "file": "MyricaM.jis1.woff2",
+          "chars": 2965,
+          "bytes": 354964,
+          "sha256": "7734563ce8925ea62294309ac0c97fcab3eda29ba523dab7a80c7c285f171ffd",
+          "minimum": false
+        },
+        {
+          "name": "jis2a",
+          "file": "MyricaM.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 144100,
+          "sha256": "e103e6d39c447912da2f46a1845ae3dc3416c0c04167d19546407cb1caa0c1cb",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "MyricaM.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 166164,
+          "sha256": "a34ec79afd6827933ef00adbc2c3463f3de4d5c05c0f7fded04f4db554e2d36e",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "MyricaM.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 172944,
+          "sha256": "03e85bc479beb0fb0127fa9cb6818ace336f879a2db97167db6eefe249a2ef4c",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "MyricaM.ext.woff2",
+          "chars": 360,
+          "bytes": 52208,
+          "sha256": "c77d2392fb44f82ede22974b70e2700fa742a7b8ae21639c9c5fae652f9589fa",
+          "minimum": false
+        }
+      ]
+    }
+  ],
+  "sizes": {
+    "recommended": 5920908,
+    "recommendedWithoutCode": 4962816,
+    "minimum": 2080732
+  }
+}
