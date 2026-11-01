@@ -8,6 +8,9 @@
       "sourceSha256": "9d3deb92fe9983c02622e57a595d0d46cc6db6306e8c7f7b1c696f9fec12c6c6",
       "version": "Version 1.002",
       "copyright": "Copyright 2022 The Zen Project Authors (https://github.com/googlefonts/zen-kakugothic)",
+      "licenses": [
+        "ZenKakuGothicNew-OFL.txt"
+      ],
       "group": "ui",
       "slices": [
         {
@@ -27,11 +30,27 @@
           "minimum": true
         },
         {
-          "name": "jis1",
-          "file": "ZenKakuGothicNew-Regular.jis1.woff2",
-          "chars": 2965,
-          "bytes": 412636,
-          "sha256": "5a2ee2719443cd64ab2f3489f73d788c9c2e5391b4625ad6f8d7e4425f7d1476",
+          "name": "jis1a",
+          "file": "ZenKakuGothicNew-Regular.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 134428,
+          "sha256": "7b84d262a2a07571d4db6b0b46f67a0222963280974660c54db365d8a0368a05",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenKakuGothicNew-Regular.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 211116,
+          "sha256": "e49e942d30af4445b2abc899ad70d71532a2fd8c67a477f61a63921e44301f3e",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenKakuGothicNew-Regular.jis1c.woff2",
+          "chars": 556,
+          "bytes": 91732,
+          "sha256": "80d2b2f4447deba9648ebd19d8568774e5a12761a3c486bf71a5153fa5fbd54d",
           "minimum": true
         },
         {
@@ -75,6 +94,9 @@
       "sourceSha256": "f7d03cb99b61f811073053a1d7f5a351834c915e4116a013a7d72c0a283096dc",
       "version": "Version 1.002",
       "copyright": "Copyright 2022 The Zen Project Authors (https://github.com/googlefonts/zen-kakugothic)",
+      "licenses": [
+        "ZenKakuGothicNew-OFL.txt"
+      ],
       "group": "ui",
       "slices": [
         {
@@ -94,11 +116,27 @@
           "minimum": true
         },
         {
-          "name": "jis1",
-          "file": "ZenKakuGothicNew-Bold.jis1.woff2",
-          "chars": 2965,
-          "bytes": 424224,
-          "sha256": "37f49e1e00278c2eb68d7a76e962259f04a72406659e4154f927f72b5ac0441e",
+          "name": "jis1a",
+          "file": "ZenKakuGothicNew-Bold.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 137240,
+          "sha256": "8c9931de4de7d37fecead41468031133fbcb1c6a3ccab3bcd9a055616ba8ae7a",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenKakuGothicNew-Bold.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 215564,
+          "sha256": "0053ffe1cdb904df301870b714f393a5851ff45415279c5985cfc3f41b0cccd9",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenKakuGothicNew-Bold.jis1c.woff2",
+          "chars": 556,
+          "bytes": 93852,
+          "sha256": "699e0a3bb59c59fa825e8202bdc46aa3769c54ad20b7bf00edfa2b5443d6b4ca",
           "minimum": true
         },
         {
@@ -142,6 +180,9 @@
       "sourceSha256": "1d33914f96ce5ae8eb2a01286f8b2b011284dd732c053fe081c4c93e3db514fb",
       "version": "Version 1.001",
       "copyright": "Copyright 2021 The Zen Maru Gothic Authors (https://github.com/googlefonts/zen-marugothic)",
+      "licenses": [
+        "ZenMaruGothic-OFL.txt"
+      ],
       "group": "ui",
       "slices": [
         {
@@ -161,11 +202,27 @@
           "minimum": true
         },
         {
-          "name": "jis1",
-          "file": "ZenMaruGothic-Bold.jis1.woff2",
-          "chars": 2965,
-          "bytes": 635656,
-          "sha256": "06abbdea97560dab5220862c068d8e31e5dbf084d951b6d16cf2e7680579e2ad",
+          "name": "jis1a",
+          "file": "ZenMaruGothic-Bold.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 203936,
+          "sha256": "fac24c201166526ccdbf3dbeccd86fe939415a3e6ec6c834322764dbca155ade",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenMaruGothic-Bold.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 322020,
+          "sha256": "6274a19b0dc3f998f7c7ef4f882e790251c0163a2efff0a41d197ea321bad297",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenMaruGothic-Bold.jis1c.woff2",
+          "chars": 556,
+          "bytes": 140392,
+          "sha256": "daeb6d44087a58b9665fb7e4ae971ad77a4772ca4c76aa1bf4855d6f18a4ef83",
           "minimum": true
         },
         {
@@ -209,6 +266,11 @@
       "sourceSha256": "eb1f07e11b7dc19a86b2e8e37190872c7d1b59199a86b5a1169d21ff1630ed15",
       "version": "Version 2.012.20180119 ",
       "copyright": "Copyright (c) 2006-2012 Raph Levien (Inconsolata)\nCopyright (c) 2013 M+ FONTS PROJECT (M+)\nCopyright (c) 2013 itouhiro (Migu)\nCopyright (c) 2014 MM (GenShinGothic)\nCopyright (c) 2014 Adobe Systems Incorporated. (NotoSansJP)\nLicenses:\nSIL Open Font License Version 1.1 (http://scripts.sil.org/ofl)\n",
+      "licenses": [
+        "Myrica-LICENSE_M+.txt",
+        "Myrica-LICENSE_OFL.txt",
+        "Myrica-README.md"
+      ],
       "group": "code",
       "slices": [
         {
@@ -228,11 +290,27 @@
           "minimum": false
         },
         {
-          "name": "jis1",
-          "file": "MyricaM.jis1.woff2",
-          "chars": 2965,
-          "bytes": 354964,
-          "sha256": "7734563ce8925ea62294309ac0c97fcab3eda29ba523dab7a80c7c285f171ffd",
+          "name": "jis1a",
+          "file": "MyricaM.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 115808,
+          "sha256": "8bbecf22bc59d0a5e34cdd78598d1e693d9ad931507f8a73e800d9b9b8fb2cbb",
+          "minimum": false
+        },
+        {
+          "name": "jis1b",
+          "file": "MyricaM.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 181308,
+          "sha256": "9ab1159934fe85e4621ead12e86dd60cd5a009d0f01f3632669e772328189525",
+          "minimum": false
+        },
+        {
+          "name": "jis1c",
+          "file": "MyricaM.jis1c.woff2",
+          "chars": 556,
+          "bytes": 80336,
+          "sha256": "e657c009459786b7a8bab0a52cb84f9c16d221c41e6ad3bbd2e3bb83c5fa2c65",
           "minimum": false
         },
         {
@@ -271,8 +349,8 @@
     }
   ],
   "sizes": {
-    "recommended": 4798388,
-    "recommendedWithoutCode": 3840296,
-    "minimum": 1626652
+    "recommended": 4898640,
+    "recommendedWithoutCode": 3918060,
+    "minimum": 1704416
   }
 }
