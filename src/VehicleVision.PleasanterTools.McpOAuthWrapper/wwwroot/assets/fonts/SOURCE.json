@@ -1,0 +1,9 @@
+{
+  "source": "vehiclevisionjp/VehicleVision.DesignReference",
+  "commit": "73943fd41880dd1144bae2f3a67a09e7f3bf6e32",
+  "designReferenceVersion": "2.2",
+  "manifestSha256": "d2323111a6d1d4541ef29c2170b25f8dcbac89f888a6795296ddbf83c3933e47",
+  "profile": "recommended",
+  "withoutCode": true,
+  "note": "scripts/fonts/sync-app-fonts.mjs が作る。手で直さない。更新は DesignReference の最新で同じコマンドを実行する。"
+}
