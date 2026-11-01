@@ -16,11 +16,11 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2",
-    "eslint": "10.13.0",
+    "eslint": "10.14.0",
     "markdownlint": "0.42.0",
-    "sass": "1.107.0",
+    "sass": "1.107.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.0"
+    "typescript-eslint": "8.72.1"
   },
   "overrides": {
     "re2js": "2.8.7",
