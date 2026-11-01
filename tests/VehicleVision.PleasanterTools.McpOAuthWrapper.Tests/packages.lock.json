@@ -48,15 +48,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "4.0.102.12",
-        "contentHash": "/wJwMdRT5e9AbqRFfeazbyAbAZijYMDGlLDGAc07Ob2tPdeEUE0dC0zISIdtdWtCu0lV+oWf3qcsevpd7ejn9g=="
+        "resolved": "4.0.102.14",
+        "contentHash": "pRYOOIyj40UdQ6G9iq8AOU30sFPqWS/umM/sFTmAl4n1S6AVbVa67DJpJTxD+9qJFqweHPcyVW7Qb4BbUBLJdg=="
       },
       "AWSSDK.SecretsManager": {
         "type": "Transitive",
-        "resolved": "4.0.100.20",
-        "contentHash": "HwRK5XFaDodhUdB5vcVJJ4o9Wp53tnbww0rr+7QhQ5Oj7L3YD4QBBFW1TeugxQ5PoQoCTNZ9wMOPyLRmz+gJ1A==",
+        "resolved": "4.0.100.22",
+        "contentHash": "z6aPw+JX6SUYe4T09Rmq1a5VbGt+3e9rfkWh9CR+H0p4IEPSybmn/ErSOXkbPvqshifobdYlr9qkL0fLZ7Q4Aw==",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.102.12, 5.0.0)"
+          "AWSSDK.Core": "[4.0.102.14, 5.0.0)"
         }
       },
       "Azure.Core": {
@@ -1162,8 +1162,8 @@
       },
       "RESPite": {
         "type": "Transitive",
-        "resolved": "3.4.20",
-        "contentHash": "MRBfXbMStwHGzM2UsbWsmh7mF/WDh4kNonrhOj5HLfkVp+PIstu4MuElusyJLHu5MkOIQj9+u1xWQ5YeJTveHQ=="
+        "resolved": "3.4.29",
+        "contentHash": "LKL/mB4lRuiLy/ld2E6Sot7zYsgpKKi8K7AWwydy1pgDFgza/A/lJcYCm/b7f5IglgMzT7Y9VCDTcWLq00wx7w=="
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
@@ -1194,11 +1194,11 @@
       },
       "StackExchange.Redis": {
         "type": "Transitive",
-        "resolved": "3.4.20",
-        "contentHash": "eIPMxCzqw3BMWp1GOOcafs7RPrScSHiCT9b1DIEJ49h9b7tHBw21+rN6gLWdQmJzvR+Wzwx3obmCp3FpgKuUSg==",
+        "resolved": "3.4.29",
+        "contentHash": "a/tpPHvCbzSUvnjtNaFqDmF5bTsMraA2Ms7wpcM/gNo9SU/vBwlU6aGLAWH9NiGUGG0tElz+9Ec8PKEKZKvuvA==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "10.0.13",
-          "RESPite": "3.4.20",
+          "RESPite": "3.4.29",
           "System.IO.Hashing": "10.0.13"
         }
       },
@@ -1338,7 +1338,7 @@
       "vehiclevision.pleasantertools.mcpoauthwrapper": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.SecretsManager": "[4.0.100.20, )",
+          "AWSSDK.SecretsManager": "[4.0.100.22, )",
           "Azure.Identity": "[1.21.0, )",
           "Azure.Security.KeyVault.Secrets": "[4.12.0, )",
           "Google.Cloud.SecretManager.V1": "[2.8.0, )",
@@ -1350,7 +1350,7 @@
           "OCI.DotNetSDK.Secrets": "[150.0.0, )",
           "OpenIddict.AspNetCore": "[7.7.2, )",
           "OpenIddict.EntityFrameworkCore": "[7.7.2, )",
-          "StackExchange.Redis": "[3.4.20, )",
+          "StackExchange.Redis": "[3.4.29, )",
           "System.Security.Cryptography.Pkcs": "[10.0.14, )",
           "Yarp.ReverseProxy": "[2.3.0, )"
         }
