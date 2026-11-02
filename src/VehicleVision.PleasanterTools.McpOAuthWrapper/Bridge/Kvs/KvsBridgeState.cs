@@ -16,7 +16,10 @@ public sealed class KvsBridgeState(KvsBackend backend) : IBridgeState
     }
     public async Task CreateConsentAsync(string id, CancellationToken ct)
     {
-        if (!await backend.Database.StringSetAsync(backend.Key("consent:" + id), "1", TimeSpan.FromMinutes(5), When.NotExists).WaitAsync(ct)) throw new InvalidOperationException("同意の識別子が重複しました。");
+        if (!await backend.Database.StringSetAsync(backend.Key("consent:" + id), "1", TimeSpan.FromMinutes(5), When.NotExists).WaitAsync(ct))
+        {
+            throw new InvalidOperationException("同意の識別子が重複しました。");
+        }
     }
     public async Task<bool> ConsumeConsentAsync(string id, CancellationToken ct) => !(await backend.Database.StringGetDeleteAsync(backend.Key("consent:" + id)).WaitAsync(ct)).IsNull;
 }

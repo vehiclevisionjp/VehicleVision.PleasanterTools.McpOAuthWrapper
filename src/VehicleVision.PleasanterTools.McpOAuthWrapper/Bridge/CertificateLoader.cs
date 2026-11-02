@@ -21,13 +21,18 @@ internal static class CertificateLoader
         var sources = new[] { !string.IsNullOrWhiteSpace(path), !string.IsNullOrWhiteSpace(base64),
             !string.IsNullOrWhiteSpace(thumbprint), cloudSpecified }.Count(value => value);
         if (sources > 1)
+        {
             throw new InvalidOperationException($"{purpose}証明書は Path、Base64、Thumbprint、Cloud のいずれか一つだけを設定してください。");
+        }
+
         X509Certificate2 certificate;
         byte[]? pfx = null;
         try
         {
             if (!string.IsNullOrWhiteSpace(thumbprint))
+            {
                 certificate = LoadStore(thumbprint, options.CertificateStoreName, options.CertificateStoreLocation);
+            }
             else if (cloudSpecified)
             {
                 CloudCertificateReader.Validate(cloud);
@@ -36,10 +41,15 @@ internal static class CertificateLoader
                 certificate = X509CertificateLoader.LoadPkcs12(pfx, options.CertificatePassword, X509KeyStorageFlags.EphemeralKeySet);
             }
             else if (sources == 1)
+            {
                 certificate = BridgeSetup.LoadCertificate(path, base64, options.CertificatePassword, root, purpose);
+            }
             else
+            {
                 certificate = LoadOrCreate(Path.Combine(Path.GetFullPath(options.StateDirectory, root), "certificates"), signing,
                     options.CertificatePassword);
+            }
+
             Validate(certificate, purpose, signing);
             return certificate;
         }
@@ -50,32 +60,50 @@ internal static class CertificateLoader
         }
         finally
         {
-            if (pfx is not null) CryptographicOperations.ZeroMemory(pfx);
+            if (pfx is not null)
+            {
+                CryptographicOperations.ZeroMemory(pfx);
+            }
         }
     }
 
     private static X509Certificate2 LoadStore(string thumbprint, string name, string location)
     {
         if (!OperatingSystem.IsWindows())
+        {
             throw new PlatformNotSupportedException("証明書ストア方式は Windows 専用です。");
+        }
+
         if (!Enum.TryParse<StoreName>(name, ignoreCase: true, out var storeName) || !Enum.IsDefined(storeName)
             || !Enum.TryParse<StoreLocation>(location, ignoreCase: true, out var storeLocation) || !Enum.IsDefined(storeLocation))
+        {
             throw new InvalidOperationException("証明書ストア名と場所を確認してください。");
+        }
+
         var normalized = string.Concat(thumbprint.Where(character => !char.IsWhiteSpace(character)));
         if (normalized.Length != 40 || normalized.Any(character => !Uri.IsHexDigit(character)))
+        {
             throw new InvalidOperationException("証明書の拇印を確認してください。");
+        }
+
         using var store = new X509Store(storeName, storeLocation);
         store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
         var matches = store.Certificates.Find(X509FindType.FindByThumbprint, normalized, validOnly: false);
         try
         {
-            if (matches.Count != 1) throw new InvalidOperationException("証明書を一意に取得できません。");
+            if (matches.Count != 1)
+            {
+                throw new InvalidOperationException("証明書を一意に取得できません。");
+            }
             // 非エクスポート鍵も OS プロバイダーを通して利用できる。
             return new X509Certificate2(matches[0]);
         }
         finally
         {
-            foreach (var match in matches) match.Dispose();
+            foreach (var match in matches)
+            {
+                match.Dispose();
+            }
         }
     }
 
@@ -97,7 +125,11 @@ internal static class CertificateLoader
             try
             {
                 var fileOptions = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None };
-                if (!OperatingSystem.IsWindows()) fileOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                if (!OperatingSystem.IsWindows())
+                {
+                    fileOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                }
+
                 using (var file = new FileStream(temporary, fileOptions))
                 {
                     file.Write(pfx);
@@ -110,7 +142,10 @@ internal static class CertificateLoader
             finally
             {
                 CryptographicOperations.ZeroMemory(pfx);
-                if (File.Exists(temporary)) File.Delete(temporary);
+                if (File.Exists(temporary))
+                {
+                    File.Delete(temporary);
+                }
             }
         }
         return X509CertificateLoader.LoadPkcs12FromFile(path, password, X509KeyStorageFlags.EphemeralKeySet);
@@ -128,7 +163,9 @@ internal static class CertificateLoader
             new DirectoryInfo(path).Create(security);
         }
         else
+        {
             Directory.CreateDirectory(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
         // 既存の領域の権限は変更しない。共有時は配置側で実行アカウントだけに権限を設定する。
     }
 
@@ -138,16 +175,31 @@ internal static class CertificateLoader
         {
             if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
                 || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
+            {
                 throw new InvalidOperationException($"{purpose}証明書の秘密鍵と有効期限を確認してください。");
+            }
+
             using var rsa = certificate.GetRSAPrivateKey();
-            if (rsa is null || rsa.KeySize < 2048) throw new InvalidOperationException("RSA 2048 ビット以上の秘密鍵が必要です。");
+            if (rsa is null || rsa.KeySize < 2048)
+            {
+                throw new InvalidOperationException("RSA 2048 ビット以上の秘密鍵が必要です。");
+            }
+
             var usage = certificate.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault();
             if (usage is not null && !usage.KeyUsages.HasFlag(signing ? X509KeyUsageFlags.DigitalSignature : X509KeyUsageFlags.KeyEncipherment))
+            {
                 throw new InvalidOperationException("証明書の用途を確認してください。");
+            }
             // 秘密鍵へのアクセス権も起動時に確認する。
             var probe = new byte[] { 1, 2, 3 };
-            if (signing) rsa.SignData(probe, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            else rsa.Decrypt(rsa.Encrypt(probe, RSAEncryptionPadding.OaepSHA256), RSAEncryptionPadding.OaepSHA256);
+            if (signing)
+            {
+                rsa.SignData(probe, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            }
+            else
+            {
+                rsa.Decrypt(rsa.Encrypt(probe, RSAEncryptionPadding.OaepSHA256), RSAEncryptionPadding.OaepSHA256);
+            }
         }
         catch
         {

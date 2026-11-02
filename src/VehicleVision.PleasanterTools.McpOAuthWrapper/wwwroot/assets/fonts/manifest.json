@@ -1,0 +1,356 @@
+{
+  "_comment": "make-app-fonts.py が作る。fonts/app/ の出どころと中身(元の woff2 の SHA-256・書体の版・区画ごとのサイズと SHA-256)。",
+  "fonts": [
+    {
+      "family": "Zen Kaku Gothic New",
+      "weight": 400,
+      "source": "fonts/ZenKakuGothicNew-Regular.woff2",
+      "sourceSha256": "9d3deb92fe9983c02622e57a595d0d46cc6db6306e8c7f7b1c696f9fec12c6c6",
+      "version": "Version 1.002",
+      "copyright": "Copyright 2022 The Zen Project Authors (https://github.com/googlefonts/zen-kakugothic)",
+      "licenses": [
+        "ZenKakuGothicNew-OFL.txt"
+      ],
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "ZenKakuGothicNew-Regular.latin.woff2",
+          "chars": 218,
+          "bytes": 9100,
+          "sha256": "3ff3ccab1aa1d0dbdcdf08c006a5e0e0b7be1296e0a52b409ad951820c9c4291",
+          "minimum": true
+        },
+        {
+          "name": "kana",
+          "file": "ZenKakuGothicNew-Regular.kana.woff2",
+          "chars": 605,
+          "bytes": 38756,
+          "sha256": "a2048884b5281b4c816c6b715ff7115fbfd3a084b5931f3f76ba6f241ff36081",
+          "minimum": true
+        },
+        {
+          "name": "jis1a",
+          "file": "ZenKakuGothicNew-Regular.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 134428,
+          "sha256": "7b84d262a2a07571d4db6b0b46f67a0222963280974660c54db365d8a0368a05",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenKakuGothicNew-Regular.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 211116,
+          "sha256": "e49e942d30af4445b2abc899ad70d71532a2fd8c67a477f61a63921e44301f3e",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenKakuGothicNew-Regular.jis1c.woff2",
+          "chars": 556,
+          "bytes": 91732,
+          "sha256": "80d2b2f4447deba9648ebd19d8568774e5a12761a3c486bf71a5153fa5fbd54d",
+          "minimum": true
+        },
+        {
+          "name": "jis2a",
+          "file": "ZenKakuGothicNew-Regular.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 162160,
+          "sha256": "539b3fb53b7f3c57889fb0a1fb75836c33bd463ea5f8250dcbfdd560c6b4c586",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "ZenKakuGothicNew-Regular.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 193324,
+          "sha256": "f22031294cddd7d1033193c7b83cb03345d06024c64aede66dab71a5e5170035",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "ZenKakuGothicNew-Regular.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 202464,
+          "sha256": "626ed5404b90b4a7f45a9aa881420337b1a391234a5c8f0d876fc459d61c3bcc",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "ZenKakuGothicNew-Regular.ext.woff2",
+          "chars": 360,
+          "bytes": 60116,
+          "sha256": "d4b9c484ae1401192f88baef93bc9503e2419ac7739fa91b6f4c191d9fff1789",
+          "minimum": false
+        }
+      ]
+    },
+    {
+      "family": "Zen Kaku Gothic New",
+      "weight": 700,
+      "source": "fonts/ZenKakuGothicNew-Bold.woff2",
+      "sourceSha256": "f7d03cb99b61f811073053a1d7f5a351834c915e4116a013a7d72c0a283096dc",
+      "version": "Version 1.002",
+      "copyright": "Copyright 2022 The Zen Project Authors (https://github.com/googlefonts/zen-kakugothic)",
+      "licenses": [
+        "ZenKakuGothicNew-OFL.txt"
+      ],
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "ZenKakuGothicNew-Bold.latin.woff2",
+          "chars": 218,
+          "bytes": 9068,
+          "sha256": "1c2315e8453874afac78f0b2bcf20ad90e28cecb5a0ffded5cf02d3336a49907",
+          "minimum": true
+        },
+        {
+          "name": "kana",
+          "file": "ZenKakuGothicNew-Bold.kana.woff2",
+          "chars": 605,
+          "bytes": 38404,
+          "sha256": "bcac7f5e7ae4cfc2c117ea1009c4579902c70355dcd3a6af6ce1b5fa0d8380d2",
+          "minimum": true
+        },
+        {
+          "name": "jis1a",
+          "file": "ZenKakuGothicNew-Bold.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 137240,
+          "sha256": "8c9931de4de7d37fecead41468031133fbcb1c6a3ccab3bcd9a055616ba8ae7a",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenKakuGothicNew-Bold.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 215564,
+          "sha256": "0053ffe1cdb904df301870b714f393a5851ff45415279c5985cfc3f41b0cccd9",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenKakuGothicNew-Bold.jis1c.woff2",
+          "chars": 556,
+          "bytes": 93852,
+          "sha256": "699e0a3bb59c59fa825e8202bdc46aa3769c54ad20b7bf00edfa2b5443d6b4ca",
+          "minimum": true
+        },
+        {
+          "name": "jis2a",
+          "file": "ZenKakuGothicNew-Bold.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 165272,
+          "sha256": "00a1209b50b2ca8268f257aafdf7fdf5656975cc78db50a57cab4c41d96de43b",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "ZenKakuGothicNew-Bold.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 198760,
+          "sha256": "46d98c40b31cfcd2ed3c10d4ccd7ff99cc93ffafe7dbab3da07b565f2aa38a02",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "ZenKakuGothicNew-Bold.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 207376,
+          "sha256": "6e32821d818cac7845a39aa9637351e8d2a827b7601f70241bf790bfa7e3f51e",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "ZenKakuGothicNew-Bold.ext.woff2",
+          "chars": 360,
+          "bytes": 61484,
+          "sha256": "5152d940b08e4f217c1eb342a9b13c2058bdc9930ec348d58d656ec881542bd7",
+          "minimum": false
+        }
+      ]
+    },
+    {
+      "family": "Zen Maru Gothic",
+      "weight": 700,
+      "source": "fonts/ZenMaruGothic-Bold.woff2",
+      "sourceSha256": "1d33914f96ce5ae8eb2a01286f8b2b011284dd732c053fe081c4c93e3db514fb",
+      "version": "Version 1.001",
+      "copyright": "Copyright 2021 The Zen Maru Gothic Authors (https://github.com/googlefonts/zen-marugothic)",
+      "licenses": [
+        "ZenMaruGothic-OFL.txt"
+      ],
+      "group": "ui",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "ZenMaruGothic-Bold.latin.woff2",
+          "chars": 222,
+          "bytes": 11100,
+          "sha256": "23912f78f1b74c8f2a8a2509a2ac87cdb0a30fb6ec71a284887fed9cefdf6f89",
+          "minimum": true
+        },
+        {
+          "name": "kana",
+          "file": "ZenMaruGothic-Bold.kana.woff2",
+          "chars": 653,
+          "bytes": 47708,
+          "sha256": "ea54d147698c4ac50a31ee9c6bad81dc7dfb19393773ea0d322d98e31c555f84",
+          "minimum": true
+        },
+        {
+          "name": "jis1a",
+          "file": "ZenMaruGothic-Bold.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 203936,
+          "sha256": "fac24c201166526ccdbf3dbeccd86fe939415a3e6ec6c834322764dbca155ade",
+          "minimum": true
+        },
+        {
+          "name": "jis1b",
+          "file": "ZenMaruGothic-Bold.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 322020,
+          "sha256": "6274a19b0dc3f998f7c7ef4f882e790251c0163a2efff0a41d197ea321bad297",
+          "minimum": true
+        },
+        {
+          "name": "jis1c",
+          "file": "ZenMaruGothic-Bold.jis1c.woff2",
+          "chars": 556,
+          "bytes": 140392,
+          "sha256": "daeb6d44087a58b9665fb7e4ae971ad77a4772ca4c76aa1bf4855d6f18a4ef83",
+          "minimum": true
+        },
+        {
+          "name": "jis2a",
+          "file": "ZenMaruGothic-Bold.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 251048,
+          "sha256": "804d7385f11e96e47735197ebdc59d48e539a64afd535d8332e09aca00e43e43",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "ZenMaruGothic-Bold.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 302056,
+          "sha256": "2655a1f2f82b2140a16a10aadabbe6c58d2e1d3a86645e1e27ba6c101ed7c184",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "ZenMaruGothic-Bold.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 318360,
+          "sha256": "eae7e29018e00372f28329305f927b9dcfbcde01027780873ae5ca87d109c39c",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "ZenMaruGothic-Bold.ext.woff2",
+          "chars": 360,
+          "bytes": 91224,
+          "sha256": "75ef5b0eabc8087f3f7c1e2a195d8757bd3be7664ef0148307827f7411334827",
+          "minimum": false
+        }
+      ]
+    },
+    {
+      "family": "Myrica M",
+      "weight": 400,
+      "source": "fonts/MyricaM.woff2",
+      "sourceSha256": "eb1f07e11b7dc19a86b2e8e37190872c7d1b59199a86b5a1169d21ff1630ed15",
+      "version": "Version 2.012.20180119 ",
+      "copyright": "Copyright (c) 2006-2012 Raph Levien (Inconsolata)\nCopyright (c) 2013 M+ FONTS PROJECT (M+)\nCopyright (c) 2013 itouhiro (Migu)\nCopyright (c) 2014 MM (GenShinGothic)\nCopyright (c) 2014 Adobe Systems Incorporated. (NotoSansJP)\nLicenses:\nSIL Open Font License Version 1.1 (http://scripts.sil.org/ofl)\n",
+      "licenses": [
+        "Myrica-LICENSE_M+.txt",
+        "Myrica-LICENSE_OFL.txt",
+        "Myrica-README.md"
+      ],
+      "group": "code",
+      "slices": [
+        {
+          "name": "latin",
+          "file": "MyricaM.latin.woff2",
+          "chars": 578,
+          "bytes": 24148,
+          "sha256": "e504db3a14092691f4f3c7270cf3d01a4ec3f706250bc364f11e8a91ef3871d9",
+          "minimum": false
+        },
+        {
+          "name": "kana",
+          "file": "MyricaM.kana.woff2",
+          "chars": 732,
+          "bytes": 43564,
+          "sha256": "f9ccc5766d28336d04ff407431f75a220f86dd89de2dcfa26bc2103af7bfb103",
+          "minimum": false
+        },
+        {
+          "name": "jis1a",
+          "file": "MyricaM.jis1a.woff2",
+          "chars": 1000,
+          "bytes": 115808,
+          "sha256": "8bbecf22bc59d0a5e34cdd78598d1e693d9ad931507f8a73e800d9b9b8fb2cbb",
+          "minimum": false
+        },
+        {
+          "name": "jis1b",
+          "file": "MyricaM.jis1b.woff2",
+          "chars": 1409,
+          "bytes": 181308,
+          "sha256": "9ab1159934fe85e4621ead12e86dd60cd5a009d0f01f3632669e772328189525",
+          "minimum": false
+        },
+        {
+          "name": "jis1c",
+          "file": "MyricaM.jis1c.woff2",
+          "chars": 556,
+          "bytes": 80336,
+          "sha256": "e657c009459786b7a8bab0a52cb84f9c16d221c41e6ad3bbd2e3bb83c5fa2c65",
+          "minimum": false
+        },
+        {
+          "name": "jis2a",
+          "file": "MyricaM.jis2a.woff2",
+          "chars": 1130,
+          "bytes": 144100,
+          "sha256": "e103e6d39c447912da2f46a1845ae3dc3416c0c04167d19546407cb1caa0c1cb",
+          "minimum": false
+        },
+        {
+          "name": "jis2b",
+          "file": "MyricaM.jis2b.woff2",
+          "chars": 1130,
+          "bytes": 166164,
+          "sha256": "a34ec79afd6827933ef00adbc2c3463f3de4d5c05c0f7fded04f4db554e2d36e",
+          "minimum": false
+        },
+        {
+          "name": "jis2c",
+          "file": "MyricaM.jis2c.woff2",
+          "chars": 1130,
+          "bytes": 172944,
+          "sha256": "03e85bc479beb0fb0127fa9cb6818ace336f879a2db97167db6eefe249a2ef4c",
+          "minimum": false
+        },
+        {
+          "name": "ext",
+          "file": "MyricaM.ext.woff2",
+          "chars": 360,
+          "bytes": 52208,
+          "sha256": "c77d2392fb44f82ede22974b70e2700fa742a7b8ae21639c9c5fae652f9589fa",
+          "minimum": false
+        }
+      ]
+    }
+  ],
+  "sizes": {
+    "recommended": 4898640,
+    "recommendedWithoutCode": 3918060,
+    "minimum": 1704416
+  }
+}

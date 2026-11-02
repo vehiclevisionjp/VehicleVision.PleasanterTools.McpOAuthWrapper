@@ -12,15 +12,15 @@ $zipName = "VehicleVision.PleasanterTools.McpOAuthWrapper-$zipVersion-portable.z
 if ($Version) { $versionArguments = @("-p:Version=$Version") }
 dotnet publish $project -c Release --no-restore --no-self-contained -p:UseAppHost=false -p:DebugType=None -p:DebugSymbols=false -o $appDirectory @versionArguments
 if ($LASTEXITCODE -ne 0) { throw '配布物の生成に失敗しました。' }
-foreach ($file in @('LICENSE', 'NOTICE', 'README.md')) {
+foreach ($file in @('LICENSE', 'LICENSING.md', 'LICENSE-COMMERCIAL.md', 'NOTICE', 'ThirdPartyNotices.txt', 'README.md')) {
     Copy-Item -LiteralPath (Join-Path $repoRoot $file) -Destination $appDirectory
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot '_documents') -Destination $appDirectory -Recurse
-$forbidden = Get-ChildItem -LiteralPath $appDirectory -Recurse -File | Where-Object {
-    $_.Name -in @('General.json', 'Rds.json', 'Authentication.json', 'Security.json', 'appsettings.Local.json', 'oauth.db') -or
-    $_.Extension -in @('.pfx', '.pem', '.key', '.pdb') -or $_.FullName -match '[/\\]_reference[/\\]|[/\\]App_Data[/\\]Wrapper[/\\]'
+$forbidden = Get-ChildItem -LiteralPath $appDirectory -Recurse -File -Force | Where-Object {
+    $_.Name -in @('General.json', 'Rds.json', 'Authentication.json', 'Security.json', 'appsettings.Local.json', 'oauth.db', '.env', '.gitmodules', '.git') -or
+    $_.Extension -in @('.pfx', '.pem', '.key', '.pdb') -or $_.FullName -match '[/\\](_reference|\.git)[/\\]|[/\\]App_Data[/\\]Wrapper[/\\]'
 }
-if ($forbidden) { throw '配布対象外の設定・秘密・参照ソース・pdb が検出されました。' }
+if ($forbidden) { throw '配布対象外の設定・秘密・参照ソース・Git メタデータ・pdb が検出されました。' }
 $commit = git -C $repoRoot rev-parse HEAD
 if ($LASTEXITCODE -ne 0) { throw 'ソースのコミットを確認できません。' }
 Set-Content -LiteralPath (Join-Path $appDirectory 'BUILD.txt') -Value @(

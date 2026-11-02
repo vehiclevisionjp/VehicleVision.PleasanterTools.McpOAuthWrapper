@@ -4,5 +4,5 @@
     "MD013": false,
     "MD060": { "style": "compact" }
   },
-  "ignores": ["_reference/**"]
+  "ignores": ["_reference/**", "src/*/wwwroot/assets/fonts/licenses/**"]
 }

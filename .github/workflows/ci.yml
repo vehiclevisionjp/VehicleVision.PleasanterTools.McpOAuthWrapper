@@ -33,6 +33,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
+      - name: "{} の省略が無いか検査する"
+        run: npm run lint:ts
       - run: npm run lint:md
       - name: ロック済み依存を復元する
         run: dotnet restore --locked-mode
@@ -68,6 +70,7 @@ jobs:
           submodules: false
           persist-credentials: false
       - run: bash scripts/sync-agents.sh --check
+      - run: bash scripts/test-sync-reference.sh
       - run: bash scripts/reference-isolation-check.sh
   kvs-tests:
     name: kvs-tests / ${{ matrix.name }}

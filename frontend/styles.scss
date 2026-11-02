@@ -1,32 +1,122 @@
-$ink: #162635;
-$muted: #526579;
-$blue: #1759c1;
-* { box-sizing: border-box; }
+// VehicleVision DesignReference 第 2.4 版（コミット 0730ea9、参照 2026-11-01）の Web UI 規約に従う。
+// 明示型: 既定はライト。OS の prefers-color-scheme には従わない。このツールはダークの切り替えを持たないため、ダークの値は取り込まない。
+// 値は css/colors-explicit.css（ライト）・css/app-base.css から写したもの。手で直さず、DesignReference を直してから写し直す。
+// 書体は Zen 系を同梱する（app-fonts.css と assets/fonts/。見出し・UI は Zen Maru Gothic の太字、本文は Zen Kaku Gothic New）。同梱の範囲にない字は OS の書体で表示する。
+:root {
+  color-scheme: light;
+  --color-primary: #17184b; // 鉄紺
+  --color-primary-hover: #0e0f33; // 鉄紺 濃
+  --color-primary-subtle: #e9e9f3; // 鉄紺 淡
+  --color-primary-text: #17184b; // 鉄紺 文字
+  --color-primary-edge: #17184b; // 鉄紺 縁
+  --color-text: #0b1013; // 黒橡
+  --color-text-muted: #595857; // 墨
+  --color-border: #bdc0ba; // 白鼠
+  --color-border-strong: #85887f; // 鼠
+  --color-surface: #fffffc; // 胡粉
+  --color-bg: #f3f3f2; // 白練
+  --color-on-fill: #ffffff; // 白
+  --color-danger-text: #b7282e; // 茜色 文字
+  --color-danger-subtle: #fbeaea; // 茜色 淡
+
+  --font-sans: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  --font-heading: "Zen Maru Gothic", var(--font-sans);
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 36px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .12);
+
+  --control-h: 40px;
+  --focus-outline: 3px solid var(--color-primary-text);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; color: $ink; background: #f3f6fb; font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif; }
-a { color: $blue; text-underline-offset: .2em; }
+body { margin: 0; color: var(--color-text); background: var(--color-bg); font: var(--fs-md)/1.7 var(--font-sans); }
+a { color: var(--color-primary-text); text-underline-offset: .2em; }
 button, input { font: inherit; }
-:focus-visible { outline: 3px solid #e69813; outline-offset: 4px; }
-.shell { max-width: 1120px; margin: 0 auto; padding: 32px; }
-.brand { display: flex; align-items: center; gap: 12px; font-weight: 750; letter-spacing: -.02em; }
-.brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: white; background: $blue; font-size: 21px; }
-.brand small { display: block; color: $muted; font-size: 12px; font-weight: 500; letter-spacing: .06em; }
-.workspace { display: grid; grid-template-columns: .9fr 1.1fr; align-items: start; gap: 48px; margin-top: 42px; }
-.intro { padding: 26px 0; h1 { font-size: clamp(26px, 3vw, 34px); line-height: 1.35; letter-spacing: -.025em; margin: 18px 0; } p { color: $muted; } }
-.eyebrow { display: inline-block; border: 1px solid #c5d7f5; border-radius: 100px; padding: 4px 12px; color: $blue; background: #eaf1ff; font-size: 13px; font-weight: 650; }
-.steps { padding: 0; margin: 32px 0; list-style: none; display: flex; gap: 22px; li { display: flex; align-items: center; gap: 8px; color: $muted; font-size: 14px; } span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #cbd5e1; border-radius: 50%; } [aria-current="step"] { color: $blue; font-weight: 700; span { background: $blue; color: white; border-color: $blue; } } }
-.details { margin-top: 28px; border-top: 1px solid #d9e2ee; padding-top: 20px; dt { color: $muted; font-size: 12px; margin-top: 12px; } dd { margin: 2px 0; overflow-wrap: anywhere; font-size: 14px; } strong { font-size: 17px; } }
-.card { background: white; border: 1px solid #dce4ef; border-radius: 20px; box-shadow: 0 16px 48px #1b395310; padding: 32px; h2 { font-size: 22px; line-height: 1.5; margin: 0 0 26px; } }
-.languages { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 28px; a { font-size: 12px; padding: 4px 7px; border-radius: 6px; text-decoration: none; &[aria-current="true"] { background: #eaf1ff; color: $blue; font-weight: 700; } } }
-.field { margin: 20px 0; label { display: block; font-size: 14px; font-weight: 650; margin-bottom: 7px; } input { width: 100%; min-height: 46px; border: 1px solid #b9c8d9; border-radius: 8px; padding: 9px 12px; color: $ink; &[readonly] { background: #f3f6fb; color: $muted; } } }
-.key-control { display: flex; gap: 8px; input { min-width: 0; } button { flex-shrink: 0; } }
-.hint, .support { font-size: 13px; color: $muted; }
-fieldset { border: 1px solid #dce4ef; padding: 14px; border-radius: 10px; margin: 22px 0; legend { font-size: 13px; font-weight: 650; } label { display: block; padding: 5px 0; } input { accent-color: $blue; } }
-.alert { border: 1px solid #f1c5bc; background: #fff3ef; color: #943527; padding: 13px 16px; border-radius: 10px; margin-bottom: 22px; font-size: 14px; }
-.identity { border: 1px solid #c5d7f5; background: #f3f7ff; border-radius: 10px; padding: 16px; margin-bottom: 26px; p { margin: 0 0 12px; &:last-child { margin: 0; } } small { display: block; color: $muted; } }
-button { cursor: pointer; border: 1px solid #c6d2e1; background: white; color: $ink; border-radius: 8px; padding: 9px 14px; transition: background .15s; &:hover { background: #edf3fb; } }
-.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; button { min-height: 46px; } .primary { background: $blue; border-color: $blue; color: white; font-weight: 650; &:hover { background: #10489f; } } }
-.support { margin-top: 24px; border-top: 1px solid #e4ebf4; padding-top: 20px; }
-.footer { font-size: 12px; color: $muted; margin-top: 28px; }
-@media (max-width: 760px) { .shell { padding: 20px; } .workspace { grid-template-columns: 1fr; gap: 16px; margin-top: 16px; } .intro { padding: 0; h1 { font-size: 26px; } } .steps { margin: 18px 0; } .details { margin-top: 18px; padding-top: 8px; } .card { padding: 24px; border-radius: 14px; } }
-@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+// フォーカスは消さない。リングは面・背景のどちらの上でも 3:1 以上（鉄紺）。
+:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+
+.shell { max-width: 1120px; margin: 0 auto; padding: var(--space-8); }
+.brand { display: flex; align-items: center; gap: var(--space-3); font-family: var(--font-heading); font-weight: 700; letter-spacing: -.02em;
+  small { display: block; color: var(--color-text-muted); font-size: var(--fs-xs); font-weight: 400; letter-spacing: .06em; } }
+.brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-md); color: var(--color-on-fill); background: var(--color-primary); border: 1px solid var(--color-primary-edge); font-size: var(--fs-lg); }
+.workspace { display: grid; grid-template-columns: .9fr 1.1fr; align-items: start; gap: var(--space-12); margin-top: 42px; }
+.intro { padding: 26px 0;
+  h1 { font-family: var(--font-heading); font-size: clamp(var(--fs-xl), 3vw, var(--fs-2xl)); line-height: 1.35; letter-spacing: -.025em; margin: 18px 0; }
+  p { color: var(--color-text-muted); } }
+.eyebrow { display: inline-block; border: 1px solid var(--color-border-strong); border-radius: 100px; padding: var(--space-1) var(--space-3); color: var(--color-primary-text); background: var(--color-primary-subtle); font-size: var(--fs-sm); font-weight: 700; }
+.steps { padding: 0; margin: var(--space-8) 0; list-style: none; display: flex; gap: 22px;
+  li { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--fs-sm); }
+  span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--color-border-strong); border-radius: 50%; }
+  [aria-current="step"] { color: var(--color-primary-text); font-weight: 700;
+    span { background: var(--color-primary); color: var(--color-on-fill); border-color: var(--color-primary-edge); } } }
+.details { margin-top: 28px; border-top: 1px solid var(--color-border); padding-top: 20px;
+  dt { color: var(--color-text-muted); font-size: var(--fs-xs); margin-top: var(--space-3); }
+  dd { margin: 2px 0; overflow-wrap: anywhere; font-size: var(--fs-sm); }
+  strong { font-size: var(--fs-md); } }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: var(--space-8);
+  h2 { font-family: var(--font-heading); font-size: var(--fs-lg); line-height: 1.5; margin: 0 0 26px; } }
+.languages { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-bottom: 28px;
+  a { font-size: var(--fs-xs); padding: var(--space-1) 7px; border-radius: var(--radius-sm); text-decoration: none;
+    &:hover { background: var(--color-bg); }
+    &[aria-current="true"] { background: var(--color-primary-subtle); color: var(--color-primary-text); font-weight: 700; box-shadow: inset 0 -3px 0 var(--color-primary-text); } } }
+.field { margin: 20px 0;
+  label { display: block; font-size: var(--fs-sm); font-weight: 700; margin-bottom: 7px; }
+  input { width: 100%; min-height: var(--control-h); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface);
+    &:hover { border-color: var(--color-text-muted); }
+    &:focus-visible { border-color: var(--color-primary-text); }
+    &[readonly] { background: var(--color-bg); color: var(--color-text-muted); } } }
+.key-control { display: flex; gap: var(--space-2); input { min-width: 0; } button { flex-shrink: 0; } }
+.hint, .support { font-size: var(--fs-sm); color: var(--color-text-muted); }
+fieldset { border: 1px solid var(--color-border); padding: var(--space-4); border-radius: var(--radius-md); margin: 22px 0;
+  legend { font-size: var(--fs-sm); font-weight: 700; }
+  label { display: block; padding: 5px 0; }
+  input { accent-color: var(--color-primary-text); } }
+// エラー: 縁・淡い面・記号（×）・文言で示す。色だけに頼らない。
+.alert { display: flex; gap: var(--space-3); align-items: flex-start; border: 1px solid var(--color-danger-text); border-left-width: 6px; background: var(--color-danger-subtle); color: var(--color-text); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); margin-bottom: 22px; font-size: var(--fs-sm);
+  &::before { content: unquote('"\\00d7"'); flex: none; display: grid; place-items: center; width: 1.5em; height: 1.5em; margin-top: 1px; border-radius: 50%; color: var(--color-surface); background: var(--color-danger-text); font-size: var(--fs-sm); font-weight: 700; line-height: 1; } }
+.identity { border: 1px solid var(--color-border-strong); background: var(--color-primary-subtle); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: 26px;
+  p { margin: 0 0 var(--space-3); &:last-child { margin: 0; } }
+  small { display: block; color: var(--color-text-muted); } }
+// 副次ボタン（既定）: 面 + 鉄紺の枠・文字。
+button { cursor: pointer; min-height: var(--control-h); border: 1px solid var(--color-primary-text); background: var(--color-surface); color: var(--color-primary-text); border-radius: var(--radius-md); padding: 0 var(--space-4); font-family: var(--font-heading); font-size: var(--fs-sm); font-weight: 700; line-height: 1.2; transition: background-color .15s;
+  &:hover { background: var(--color-primary-subtle); }
+  &:disabled { background: var(--color-bg); color: var(--color-text-muted); border-color: var(--color-border); cursor: not-allowed; } }
+// 許可（承認・ログイン）は主要ボタン（鉄紺・白文字）、拒否（キャンセル）は副次ボタン（枠のみ）。形と濃さの違いで、色が見えなくても区別できる。
+.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 26px;
+  button { min-height: 44px; }
+  .primary { background: var(--color-primary); border-color: var(--color-primary-edge); color: var(--color-on-fill);
+    &:hover { background: var(--color-primary-hover); } } }
+.support { margin-top: var(--space-6); border-top: 1px solid var(--color-border); padding-top: 20px; }
+.footer { font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: 28px; }
+@media (max-width: 760px) {
+  .shell { padding: 20px; }
+  .workspace { grid-template-columns: 1fr; gap: var(--space-4); margin-top: var(--space-4); }
+  .intro { padding: 0; h1 { font-size: var(--fs-xl); } }
+  .steps { margin: 18px 0; }
+  .details { margin-top: 18px; padding-top: var(--space-2); }
+  .card { padding: var(--space-6); border-radius: var(--radius-lg); }
+}
+// 動きを減らす設定: アニメーション・トランジションを止める（DesignReference の app-base.css と同じ）。
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+// 強制カラー（Windows のハイコントラスト）: 枠で形を保つ。
+@media (forced-colors: active) { button, input, .alert { border-color: CanvasText; } }

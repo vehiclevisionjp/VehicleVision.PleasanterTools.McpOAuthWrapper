@@ -29,7 +29,11 @@ public sealed class SqliteBridgeState(IDbContextFactory<OAuthState> factory) : I
                 attempt.WindowStart = now;
                 attempt.Count = 0;
             }
-            if (attempt.Count >= 5) return false;
+            if (attempt.Count >= 5)
+            {
+                return false;
+            }
+
             attempt.Count++;
             await db.SaveChangesAsync(cancellationToken);
             return true;
@@ -45,9 +49,20 @@ public sealed class SqliteBridgeState(IDbContextFactory<OAuthState> factory) : I
         {
             await using var db = await factory.CreateDbContextAsync(cancellationToken);
             var attempt = await db.LoginAttempts.FindAsync([id], cancellationToken);
-            if (attempt is null) return;
-            if (attempt.Count > 1) attempt.Count--;
-            else db.Remove(attempt);
+            if (attempt is null)
+            {
+                return;
+            }
+
+            if (attempt.Count > 1)
+            {
+                attempt.Count--;
+            }
+            else
+            {
+                db.Remove(attempt);
+            }
+
             await db.SaveChangesAsync(cancellationToken);
         }
         finally { _gate.Release(); }

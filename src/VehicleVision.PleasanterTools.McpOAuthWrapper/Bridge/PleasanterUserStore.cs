@@ -50,7 +50,11 @@ public sealed class PleasanterConnectionFactory(RdsOptions options) : IPleasante
     {
         var builder = new SqlConnectionStringBuilder { ConnectionString = options.UserConnectionString };
         // Strict の指定は維持し、それ以外は暗号化を必須にする。
-        if (builder.Encrypt != SqlConnectionEncryptOption.Strict) builder.Encrypt = true;
+        if (builder.Encrypt != SqlConnectionEncryptOption.Strict)
+        {
+            builder.Encrypt = true;
+        }
+
         return new SqlConnection { ConnectionString = builder.ConnectionString };
     }
 }
@@ -85,7 +89,11 @@ public sealed class PleasanterUserStore(IPleasanterConnectionFactory factory, Rd
         var input = command.CreateParameter(); input.ParameterName = "@value"; input.Value = value;
         command.Parameters.Add(tenant); command.Parameters.Add(input);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken)) return null;
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
         DateTime? Date(int index) => reader.IsDBNull(index) ? null : reader.GetDateTime(index);
         var user = new PleasanterUser(Convert.ToInt32(reader.GetValue(0)), Convert.ToInt32(reader.GetValue(1)),
             reader.GetString(2), reader.IsDBNull(3) ? "" : reader.GetString(3),

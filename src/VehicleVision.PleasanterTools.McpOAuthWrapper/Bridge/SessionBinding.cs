@@ -12,7 +12,11 @@ public sealed class SessionBinding(IDataProtectionProvider provider)
 
     public string? Unwrap(string value, string binding)
     {
-        if (value.Length > 8192) return null;
+        if (value.Length > 8192)
+        {
+            return null;
+        }
+
         try
         {
             var decoded = JsonSerializer.Deserialize<BoundSession>(_protector.Unprotect(value));

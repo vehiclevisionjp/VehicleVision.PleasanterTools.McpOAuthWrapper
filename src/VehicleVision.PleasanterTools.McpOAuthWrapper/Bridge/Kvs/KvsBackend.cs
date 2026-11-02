@@ -123,7 +123,10 @@ public sealed class KvsBackend(BridgeOptions options, IConnectionMultiplexer con
         var deleted = (long)await Database.ScriptEvaluateAsync(script,
             [Key(Collection<T>()), Key(Collection<T>() + ":index"), Key("KvsToken"), Key("KvsToken:index"), Key("KvsAuthorization")],
             [entity.Id, entity.Version, Collection<T>()]).WaitAsync(ct);
-        if (deleted != 1) throw new OpenIddictExceptions.ConcurrencyException("OAuth 状態が別の処理で更新されました。");
+        if (deleted != 1)
+        {
+            throw new OpenIddictExceptions.ConcurrencyException("OAuth 状態が別の処理で更新されました。");
+        }
     }
 }
 
@@ -150,7 +153,11 @@ public abstract class KvsStore<T>(KvsBackend backend) where T : KvsEntity, new()
     }
     protected async IAsyncEnumerable<T> FilterAsync(Func<T, bool> filter, [EnumeratorCancellation] CancellationToken ct)
     {
-        foreach (var row in await backend.AllAsync<T>(ct)) { ct.ThrowIfCancellationRequested(); if (filter(row)) yield return row; }
+        foreach (var row in await backend.AllAsync<T>(ct)) { ct.ThrowIfCancellationRequested(); if (filter(row))
+            {
+                yield return row;
+            }
+        }
     }
     protected static bool Match(T row, string field, string? value) => value is null || Get<string?>(row, field) == value;
     protected async ValueTask<long> RevokeWhereAsync(Func<T, bool> filter, CancellationToken ct)
@@ -161,10 +168,18 @@ public abstract class KvsStore<T>(KvsBackend backend) where T : KvsEntity, new()
             var current = row;
             for (int retry = 0; retry < 3; retry++)
             {
-                if (!filter(current)) break;
+                if (!filter(current))
+                {
+                    break;
+                }
+
                 Set(current, "Status", OpenIddictConstants.Statuses.Revoked);
                 try { await UpdateAsync(current, ct); count++; break; }
-                catch (OpenIddictExceptions.ConcurrencyException) when (retry < 2) { current = await backend.ReadAsync<T>(row.Id, ct); if (current is null) break; }
+                catch (OpenIddictExceptions.ConcurrencyException) when (retry < 2) { current = await backend.ReadAsync<T>(row.Id, ct); if (current is null)
+                    {
+                        break;
+                    }
+                }
             }
         }
         return count;
@@ -177,7 +192,11 @@ public abstract class KvsStore<T>(KvsBackend backend) where T : KvsEntity, new()
         {
             bool expired = typeof(T) == typeof(KvsToken) ? Get<DateTimeOffset?>(row, "ExpirationDate") < now || Get<string>(row, "Status") is not ("valid" or "inactive")
                 : Get<string>(row, "Status") != "valid" || Get<string>(row, "Type") == OpenIddictConstants.AuthorizationTypes.AdHoc && !tokens.Any(t => KvsBackend.Get<string>(t, "AuthorizationId") == row.Id && KvsBackend.Get<string>(t, "Status") == "valid" && KvsBackend.Get<DateTimeOffset?>(t, "ExpirationDate") > now);
-            if (!expired) continue;
+            if (!expired)
+            {
+                continue;
+            }
+
             try { await DeleteAsync(row, cancellationToken); count++; } catch (OpenIddictExceptions.ConcurrencyException) { }
         }
         return count;

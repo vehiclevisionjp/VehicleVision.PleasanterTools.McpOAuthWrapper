@@ -47,7 +47,9 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
             new ForwarderRequestConfig { ActivityTimeout = TimeSpan.FromMinutes(10) },
             new KeyTransformer(owner.ApiKey, upstreamSession, binding, sessions));
         if (error != ForwarderError.None && !context.Response.HasStarted)
+        {
             context.Response.StatusCode = StatusCodes.Status502BadGateway;
+        }
     }
 
     public static string Stamp(string hash) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(hash)));
@@ -67,10 +69,17 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
         {
             await base.TransformRequestAsync(context, request, destinationPrefix, cancellationToken);
             foreach (var header in new[] { "Authorization", "Proxy-Authorization", "X-API-Key", "Cookie", "Mcp-Session-Id", "Forwarded",
-                         "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto" }) request.Headers.Remove(header);
+                         "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto" })
+            {
+                request.Headers.Remove(header);
+            }
+
             request.Headers.Host = null;
             request.Headers.TryAddWithoutValidation("X-API-Key", key);
-            if (session is not null) request.Headers.TryAddWithoutValidation("Mcp-Session-Id", session);
+            if (session is not null)
+            {
+                request.Headers.TryAddWithoutValidation("Mcp-Session-Id", session);
+            }
         }
 
         public override async ValueTask<bool> TransformResponseAsync(HttpContext context, HttpResponseMessage? response,
@@ -80,7 +89,10 @@ public sealed class McpProxy(IPleasanterUserStore users, BridgeOptions options, 
             context.Response.Headers.Remove("Set-Cookie");
             context.Response.Headers.Remove("WWW-Authenticate");
             if (response?.Headers.TryGetValues("Mcp-Session-Id", out var ids) == true)
+            {
                 context.Response.Headers["Mcp-Session-Id"] = sessions.Wrap(ids.First(), binding);
+            }
+
             return result;
         }
     }

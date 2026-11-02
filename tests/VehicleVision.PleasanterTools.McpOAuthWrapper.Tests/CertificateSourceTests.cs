@@ -36,7 +36,12 @@ public sealed class CertificateSourceTests
                     Assert.True(security.AreAccessRulesProtected);
                     var rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>();
                     foreach (var rule in rules)
-                        if (rule.AccessControlType == AccessControlType.Allow) Assert.Equal(identity.User, rule.IdentityReference);
+                    {
+                        if (rule.AccessControlType == AccessControlType.Allow)
+                        {
+                            Assert.Equal(identity.User, rule.IdentityReference);
+                        }
+                    }
                 }
                 else
                 {
@@ -47,7 +52,11 @@ public sealed class CertificateSourceTests
                 Assert.Throws<InvalidOperationException>(() => CertificateLoader.Load(options, root, true));
                 Assert.Equal("broken-pfx", File.ReadAllText(Path.Combine(folder, "signing.pfx")));
             }
-            finally { foreach (var certificate in certificates) certificate.Dispose(); }
+            finally { foreach (var certificate in certificates)
+                {
+                    certificate.Dispose();
+                }
+            }
         }
         finally { Directory.Delete(root, true); }
     }
@@ -62,10 +71,25 @@ public sealed class CertificateSourceTests
         var options = new BridgeOptions();
         foreach (var source in new[] { first, second })
         {
-            if (source == "path") options.SigningCertificatePath = "missing.pfx";
-            if (source == "base64") options.SigningCertificateBase64 = "secret";
-            if (source == "store") options.SigningCertificateThumbprint = "thumbprint";
-            if (source == "cloud") options.SigningCertificateCloud.Provider = "Azure";
+            if (source == "path")
+            {
+                options.SigningCertificatePath = "missing.pfx";
+            }
+
+            if (source == "base64")
+            {
+                options.SigningCertificateBase64 = "secret";
+            }
+
+            if (source == "store")
+            {
+                options.SigningCertificateThumbprint = "thumbprint";
+            }
+
+            if (source == "cloud")
+            {
+                options.SigningCertificateCloud.Provider = "Azure";
+            }
         }
         var error = Assert.Throws<InvalidOperationException>(() => CertificateLoader.Load(options, ".", true));
         Assert.Contains("一つだけ", error.Message);
@@ -133,7 +157,11 @@ public sealed class CertificateSourceTests
     [Fact]
     public void Windowsストアの非エクスポート鍵を拇印で読み込める()
     {
-        if (!OperatingSystem.IsWindows()) return;
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         using var rsa = RSA.Create(2048);
         var request = new CertificateRequest("CN=Store test " + Guid.NewGuid(), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
