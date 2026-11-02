@@ -15,6 +15,26 @@ internal static class CertificateLoader
         var base64 = signing ? options.SigningCertificateBase64 : options.EncryptionCertificateBase64;
         var thumbprint = signing ? options.SigningCertificateThumbprint : options.EncryptionCertificateThumbprint;
         var cloud = signing ? options.SigningCertificateCloud : options.EncryptionCertificateCloud;
+        return LoadCore(options, root, signing, purpose, path, base64, thumbprint, cloud, previous: false, cloudReader)!;
+    }
+
+    // 旧世代は検証・復号だけに使う。未指定なら null を返し、自動生成はしない。
+    // 有効期限は問わない（期限後も、旧署名のトークンの検証と旧鍵で保護した状態の復号に使うため）。
+    internal static X509Certificate2? LoadPrevious(BridgeOptions options, string root, bool signing,
+        Func<CloudCertificateOptions, CancellationToken, Task<byte[]>>? cloudReader = null)
+    {
+        var purpose = signing ? "署名用の旧世代" : "暗号化用の旧世代";
+        var path = signing ? options.PreviousSigningCertificatePath : options.PreviousEncryptionCertificatePath;
+        var base64 = signing ? options.PreviousSigningCertificateBase64 : options.PreviousEncryptionCertificateBase64;
+        var thumbprint = signing ? options.PreviousSigningCertificateThumbprint : options.PreviousEncryptionCertificateThumbprint;
+        var cloud = signing ? options.PreviousSigningCertificateCloud : options.PreviousEncryptionCertificateCloud;
+        return LoadCore(options, root, signing, purpose, path, base64, thumbprint, cloud, previous: true, cloudReader);
+    }
+
+    private static X509Certificate2? LoadCore(BridgeOptions options, string root, bool signing, string purpose,
+        string path, string base64, string thumbprint, CloudCertificateOptions cloud, bool previous,
+        Func<CloudCertificateOptions, CancellationToken, Task<byte[]>>? cloudReader)
+    {
         var cloudSpecified = !string.IsNullOrWhiteSpace(cloud.Provider) || !string.IsNullOrWhiteSpace(cloud.SecretId)
             || !string.IsNullOrWhiteSpace(cloud.Region) || !string.IsNullOrWhiteSpace(cloud.Version)
             || cloud.OciAuthentication != "InstancePrincipal" || cloud.OciConfigProfile != "DEFAULT";
@@ -23,6 +43,11 @@ internal static class CertificateLoader
         if (sources > 1)
         {
             throw new InvalidOperationException($"{purpose}証明書は Path、Base64、Thumbprint、Cloud のいずれか一つだけを設定してください。");
+        }
+
+        if (previous && sources == 0)
+        {
+            return null;
         }
 
         X509Certificate2 certificate;
@@ -42,7 +67,8 @@ internal static class CertificateLoader
             }
             else if (sources == 1)
             {
-                certificate = BridgeSetup.LoadCertificate(path, base64, options.CertificatePassword, root, purpose);
+                certificate = BridgeSetup.LoadCertificate(path, base64, options.CertificatePassword, root, purpose,
+                    requireValidPeriod: !previous);
             }
             else
             {
@@ -50,7 +76,7 @@ internal static class CertificateLoader
                     options.CertificatePassword);
             }
 
-            Validate(certificate, purpose, signing);
+            Validate(certificate, purpose, signing, requireValidPeriod: !previous);
             return certificate;
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
@@ -169,12 +195,12 @@ internal static class CertificateLoader
         // 既存の領域の権限は変更しない。共有時は配置側で実行アカウントだけに権限を設定する。
     }
 
-    private static void Validate(X509Certificate2 certificate, string purpose, bool signing)
+    private static void Validate(X509Certificate2 certificate, string purpose, bool signing, bool requireValidPeriod)
     {
         try
         {
-            if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
-                || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
+            if (!certificate.HasPrivateKey || (requireValidPeriod && (certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
+                || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)))
             {
                 throw new InvalidOperationException($"{purpose}証明書の秘密鍵と有効期限を確認してください。");
             }

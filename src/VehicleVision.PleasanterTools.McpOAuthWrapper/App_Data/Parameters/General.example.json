@@ -36,6 +36,28 @@
     "OciAuthentication": "InstancePrincipal",
     "OciConfigProfile": "DEFAULT"
   },
+  "PreviousSigningCertificatePath": "",
+  "PreviousEncryptionCertificatePath": "",
+  "PreviousSigningCertificateBase64": "",
+  "PreviousEncryptionCertificateBase64": "",
+  "PreviousSigningCertificateThumbprint": "",
+  "PreviousEncryptionCertificateThumbprint": "",
+  "PreviousSigningCertificateCloud": {
+    "Provider": "",
+    "SecretId": "",
+    "Version": "",
+    "Region": "",
+    "OciAuthentication": "InstancePrincipal",
+    "OciConfigProfile": "DEFAULT"
+  },
+  "PreviousEncryptionCertificateCloud": {
+    "Provider": "",
+    "SecretId": "",
+    "Version": "",
+    "Region": "",
+    "OciAuthentication": "InstancePrincipal",
+    "OciConfigProfile": "DEFAULT"
+  },
   "Clients": [],
   "AllowDynamicClientRegistration": false,
   "MaxDynamicClients": 100,

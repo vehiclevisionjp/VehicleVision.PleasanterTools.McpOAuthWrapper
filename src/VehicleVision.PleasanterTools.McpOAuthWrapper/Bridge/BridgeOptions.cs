@@ -24,6 +24,16 @@ public sealed class BridgeOptions
     public string CertificateStoreLocation { get; set; } = "CurrentUser";
     public CloudCertificateOptions SigningCertificateCloud { get; set; } = new();
     public CloudCertificateOptions EncryptionCertificateCloud { get; set; } = new();
+    // ローテーション用の旧世代。検証・復号だけに使い、新しい署名・暗号化には使わない。未指定なら何も追加しない。
+    // 旧世代の入力方式も Path／Base64／Thumbprint／Cloud のいずれか一つ。ストアの名前と場所、パスワードは現行と共通。
+    public string PreviousSigningCertificatePath { get; set; } = "";
+    public string PreviousEncryptionCertificatePath { get; set; } = "";
+    public string PreviousSigningCertificateBase64 { get; set; } = "";
+    public string PreviousEncryptionCertificateBase64 { get; set; } = "";
+    public string PreviousSigningCertificateThumbprint { get; set; } = "";
+    public string PreviousEncryptionCertificateThumbprint { get; set; } = "";
+    public CloudCertificateOptions PreviousSigningCertificateCloud { get; set; } = new();
+    public CloudCertificateOptions PreviousEncryptionCertificateCloud { get; set; } = new();
     public string CertificatePassword { get; set; } = "";
     public bool AllowDevelopmentHttp { get; set; }
     public List<string> TrustedProxyAddresses { get; set; } = [];

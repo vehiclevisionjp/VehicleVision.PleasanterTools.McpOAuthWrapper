@@ -147,6 +147,63 @@ public sealed class BridgeFlowTests
         }
     }
     [Fact]
+    public async Task 証明書を入れ替えても旧世代を指定すれば発行済みトークンと状態を使い新しい署名は現行で行う()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
+        var oldPfx = NewPfx("CN=old", 2);
+        var newPfx = NewPfx("CN=new", 30);
+        Tokens tokens;
+        using (var first = new BridgeFactory(root: root, configure: o => UseCertificates(o, oldPfx, oldPfx)))
+        using (var browser = first.Browser())
+        {
+            tokens = await AuthorizeAsync(browser);
+        }
+
+        // 現行を新世代へ、旧世代を旧枠へ移した再起動。
+        using (var rotated = new BridgeFactory(root: root, configure: o =>
+        {
+            UseCertificates(o, newPfx, newPfx);
+            o.PreviousSigningCertificateBase64 = oldPfx;
+            o.PreviousEncryptionCertificateBase64 = oldPfx;
+        }))
+        using (var browser = rotated.Browser())
+        {
+            Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode);
+            var refresh = await browser.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+            { ["grant_type"] = "refresh_token", ["client_id"] = "test-client", ["refresh_token"] = tokens.RefreshToken }));
+            Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+            var options = rotated.Services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<OpenIddict.Server.OpenIddictServerOptions>>().CurrentValue;
+            Assert.Equal(2, options.SigningCredentials.Count);
+            Assert.Equal(2, options.EncryptionCredentials.Count);
+            Assert.Equal(Thumbprint(newPfx), Assert.IsType<Microsoft.IdentityModel.Tokens.X509SecurityKey>(options.SigningCredentials[0].Key).Certificate.Thumbprint);
+            Assert.Equal(Thumbprint(newPfx), Assert.IsType<Microsoft.IdentityModel.Tokens.X509SecurityKey>(options.EncryptionCredentials[0].Key).Certificate.Thumbprint);
+        }
+
+        // 旧世代を外す（旧世代の廃止後）と、旧世代で保護した状態は使えない。
+        using var removed = new BridgeFactory(root: root, configure: o => UseCertificates(o, newPfx, newPfx));
+        using var removedBrowser = removed.Browser();
+        var result = await Record.ExceptionAsync(async () =>
+            Assert.Equal(HttpStatusCode.OK, (await removedBrowser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode));
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void 旧世代の有効期限が現行以後なら新しい署名が旧世代になるため起動を拒否する()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
+        var current = NewPfx("CN=current", 2);
+        var previous = NewPfx("CN=previous", 400);
+        using var factory = new BridgeFactory(root: root, configure: o =>
+        {
+            UseCertificates(o, current, current);
+            o.PreviousSigningCertificateBase64 = previous;
+            o.PreviousEncryptionCertificateBase64 = previous;
+        });
+        var error = Assert.Throws<InvalidOperationException>(() => factory.Browser());
+        Assert.Contains("旧世代の有効期限は現行より前", error.Message);
+    }
+
+    [Fact]
     public async Task 同意画面は検証済み戻り先へのフォーム転送だけを許可する()
     {
         using var factory = new BridgeFactory();
@@ -681,6 +738,25 @@ public sealed class BridgeFlowTests
         Assert.DoesNotContain("original-key", html);
     }
     private const string Callback = "https://client.example/callback";
+    private static string NewPfx(string subject, int days)
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new System.Security.Cryptography.X509Certificates.CertificateRequest(
+            subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(days));
+        return Convert.ToBase64String(certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx));
+    }
+    private static string Thumbprint(string pfxBase64)
+    {
+        using var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
+            Convert.FromBase64String(pfxBase64), null);
+        return certificate.Thumbprint;
+    }
+    private static void UseCertificates(BridgeOptions options, string signing, string encryption)
+    {
+        options.SigningCertificateBase64 = signing;
+        options.EncryptionCertificateBase64 = encryption;
+    }
     private static readonly string Verifier = new('a', 64);
     private static string AuthorizationUrl() => "/connect/authorize?client_id=test-client&response_type=code&scope=mcp%20offline_access"
         + $"&redirect_uri={Uri.EscapeDataString(Callback)}&state=test-state&resource=http%3A%2F%2Flocalhost%2Fmcp&code_challenge_method=S256&code_challenge="
@@ -760,7 +836,7 @@ public sealed class BridgeFlowTests
             using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
             return Convert.ToBase64String(certificate.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pfx));
         });
-        public string Root { get; } = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
+        public string Root { get; }
         public UpstreamHandler Upstream { get; } = new();
         public bool IsKvs => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("MCP_TEST_KVS_CONNECTION"));
         public string KvsPrefix { get; }
@@ -769,8 +845,10 @@ public sealed class BridgeFlowTests
         private readonly string _issuer;
         private readonly string _upstream;
         public BridgeFactory(bool shared = false, bool dynamicRegistration = false,
-            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string? kvsPrefix = null, int maxDynamicClients = 100)
+            string issuer = "http://localhost/", string upstream = "http://localhost/pleasanter/", string? kvsPrefix = null, int maxDynamicClients = 100,
+            string? root = null, Action<BridgeOptions>? configure = null)
         {
+            Root = root ?? Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
             KvsPrefix = kvsPrefix ?? "test-" + Guid.NewGuid().ToString("N");
             _shared = shared;
             _dynamicRegistration = dynamicRegistration;
@@ -778,7 +856,7 @@ public sealed class BridgeFlowTests
             _upstream = upstream;
             Directory.CreateDirectory(Path.Combine(Root, "App_Data", "Parameters"));
             var parameters = Path.Combine(Root, "App_Data", "Parameters");
-            File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(new BridgeOptions
+            var bridgeOptions = new BridgeOptions
             {
                 Enabled = true,
                 Issuer = _issuer,
@@ -795,18 +873,20 @@ public sealed class BridgeFlowTests
                 AllowDynamicClientRegistration = _dynamicRegistration,
                 MaxDynamicClients = maxDynamicClients,
                 AllowedRedirectUris = [Callback]
-            }));
+            };
+            configure?.Invoke(bridgeOptions);
+            File.WriteAllText(Path.Combine(parameters, "General.json"), JsonSerializer.Serialize(bridgeOptions));
             File.WriteAllText(Path.Combine(parameters, "Rds.json"), "{\"Dbms\":\"PostgreSQL\",\"Provider\":\"Local\",\"UserConnectionString\":\"test-only\",\"SqlCommandTimeOut\":30}");
             using var connection = UsersConnection();
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = """
-                CREATE TABLE Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT COLLATE RTRIM, Password TEXT, ApiKey TEXT COLLATE NOCASE,
+                CREATE TABLE IF NOT EXISTS Users (TenantId INTEGER, UserId INTEGER PRIMARY KEY, LoginId TEXT COLLATE RTRIM, Password TEXT, ApiKey TEXT COLLATE NOCASE,
                     Disabled INTEGER, Lockout INTEGER, PasswordExpirationTime TEXT NULL, LoginExpirationLimit TEXT NULL,
                     LoginExpirationPeriod INTEGER, LastLoginTime TEXT NULL, EnableSecretKey INTEGER);
-                INSERT INTO Users VALUES (1, 1, 'alice', @hash, 'original-key', 0, 0, NULL, NULL, 0, NULL, 1);
-                INSERT INTO Users VALUES (1, 2, 'shared', @hash, 'shared-key', 0, 0, NULL, NULL, 0, NULL, 1);
-                INSERT INTO Users VALUES (1, 3, 'bob', @hash, 'bob-key', 0, 0, NULL, NULL, 0, NULL, 1);
+                INSERT OR IGNORE INTO Users VALUES (1, 1, 'alice', @hash, 'original-key', 0, 0, NULL, NULL, 0, NULL, 1);
+                INSERT OR IGNORE INTO Users VALUES (1, 2, 'shared', @hash, 'shared-key', 0, 0, NULL, NULL, 0, NULL, 1);
+                INSERT OR IGNORE INTO Users VALUES (1, 3, 'bob', @hash, 'bob-key', 0, 0, NULL, NULL, 0, NULL, 1);
                 """;
             command.Parameters.AddWithValue("@hash", Convert.ToHexStringLower(SHA512.HashData(Encoding.UTF8.GetBytes("correct-password"))));
             command.ExecuteNonQuery();

@@ -180,6 +180,70 @@ public sealed class CertificateSourceTests
         finally { store.Remove(persisted); }
     }
 
+    [Fact]
+    public void 旧世代が未指定なら何も読まず自動生成もしない()
+    {
+        var root = CreateRoot();
+        try
+        {
+            var options = new BridgeOptions { StateDirectory = "state" };
+            Assert.Null(CertificateLoader.LoadPrevious(options, root, true));
+            Assert.Null(CertificateLoader.LoadPrevious(options, root, false));
+            Assert.Empty(Directory.GetFiles(root, "*", SearchOption.AllDirectories));
+            Assert.False(Directory.Exists(Path.Combine(root, "state")));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void 旧世代は期限切れでも読めるが現行は期限切れを拒否する()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=Expired previous", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var expired = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
+        var base64 = Convert.ToBase64String(expired.Export(X509ContentType.Pfx, "test-password"));
+        var options = new BridgeOptions
+        {
+            CertificatePassword = "test-password",
+            PreviousSigningCertificateBase64 = base64,
+            PreviousEncryptionCertificateBase64 = base64,
+            SigningCertificateBase64 = base64
+        };
+        using var signing = CertificateLoader.LoadPrevious(options, ".", true);
+        using var encryption = CertificateLoader.LoadPrevious(options, ".", false);
+        Assert.Equal(expired.Thumbprint, signing!.Thumbprint);
+        Assert.Equal(expired.Thumbprint, encryption!.Thumbprint);
+        Assert.Throws<InvalidOperationException>(() => CertificateLoader.Load(options, ".", true));
+    }
+
+    [Fact]
+    public void 旧世代の二重指定と不正なPFXは拒否し秘密を公開しない()
+    {
+        var options = new BridgeOptions { PreviousSigningCertificatePath = "missing.pfx", PreviousSigningCertificateBase64 = "secret" };
+        Assert.Contains("一つだけ", Assert.Throws<InvalidOperationException>(() => CertificateLoader.LoadPrevious(options, ".", true)).Message);
+        var broken = new BridgeOptions { PreviousEncryptionCertificateBase64 = Convert.ToBase64String("secret-pfx-body"u8.ToArray()), CertificatePassword = "secret-password" };
+        var error = Assert.Throws<InvalidOperationException>(() => CertificateLoader.LoadPrevious(broken, ".", false));
+        Assert.Contains("暗号化用の旧世代", error.Message);
+        Assert.DoesNotContain("secret", error.ToString());
+        Assert.Null(error.InnerException);
+    }
+
+    [Fact]
+    public void 旧世代もクラウドPFXを保存せず読み込む()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=Cloud previous", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var original = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
+        var bytes = original.Export(X509ContentType.Pfx);
+        var options = new BridgeOptions
+        {
+            PreviousSigningCertificateCloud = new() { Provider = "GCP", SecretId = "projects/p/secrets/s/versions/1" }
+        };
+        using var loaded = CertificateLoader.LoadPrevious(options, ".", true, (_, _) => Task.FromResult(bytes));
+        Assert.Equal(original.Thumbprint, loaded!.Thumbprint);
+        Assert.All(bytes, value => Assert.Equal(0, value));
+    }
+
     private static string CreateRoot()
     {
         var root = Path.Combine(Path.GetTempPath(), "mcp-certificate-source-" + Guid.NewGuid().ToString("N"));

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -150,6 +151,15 @@ public static class BridgeSetup
         var signing = CertificateLoader.Load(options, root, signing: true);
         var encryption = CertificateLoader.Load(options, root, signing: false);
         protection.ProtectKeysWithCertificate(encryption);
+        // 旧世代は検証・復号だけに追加する。新しい署名・保護には現行の証明書だけを使う。
+        var previousSigning = CertificateLoader.LoadPrevious(options, root, signing: true);
+        var previousEncryption = CertificateLoader.LoadPrevious(options, root, signing: false);
+        EnsureDistinct(signing, previousSigning, "署名用");
+        EnsureDistinct(encryption, previousEncryption, "暗号化用");
+        if (previousEncryption is not null)
+        {
+            protection.UnprotectKeysWithAnyCertificate(previousEncryption);
+        }
         builder.Services.AddOpenIddict()
             .AddCore(core =>
             {
@@ -192,6 +202,16 @@ public static class BridgeSetup
                 server.SetRefreshTokenLifetime(TimeSpan.FromDays(1));
                 server.UseReferenceAccessTokens().UseReferenceRefreshTokens();
                 server.AddSigningCertificate(signing).AddEncryptionCertificate(encryption);
+                if (previousSigning is not null)
+                {
+                    server.AddSigningKey(new X509SecurityKey(previousSigning));
+                }
+
+                if (previousEncryption is not null)
+                {
+                    server.AddEncryptionKey(new X509SecurityKey(previousEncryption));
+                }
+
                 var asp = server.UseAspNetCore().EnableAuthorizationEndpointPassthrough().EnableTokenEndpointPassthrough();
                 if (allowHttp)
                 {
@@ -276,7 +296,27 @@ public static class BridgeSetup
         return result;
     }
 
-    internal static X509Certificate2 LoadCertificate(string path, string base64, string password, string root, string purpose)
+    private static void EnsureDistinct(X509Certificate2 current, X509Certificate2? previous, string purpose)
+    {
+        if (previous is null)
+        {
+            return;
+        }
+
+        if (string.Equals(current.Thumbprint, previous.Thumbprint, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"{purpose}の旧世代に現行と同じ証明書は指定できません。");
+        }
+
+        // OpenIddict は有効期限が遅い証明書を先頭にして署名・暗号化に使う。旧世代が現行より遅いと、新しい署名が旧世代になる。
+        if (previous.NotAfter.ToUniversalTime() >= current.NotAfter.ToUniversalTime())
+        {
+            throw new InvalidOperationException($"{purpose}の旧世代の有効期限は現行より前でなければなりません。現行と旧世代の指定が逆でないか確認してください。");
+        }
+    }
+
+    internal static X509Certificate2 LoadCertificate(string path, string base64, string password, string root, string purpose,
+        bool requireValidPeriod = true)
     {
         var fromFile = !string.IsNullOrWhiteSpace(path);
         var fromSecret = !string.IsNullOrWhiteSpace(base64);
@@ -313,8 +353,8 @@ public static class BridgeSetup
                 CryptographicOperations.ZeroMemory(pfx);
             }
         }
-        if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
-            || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)
+        if (!certificate.HasPrivateKey || (requireValidPeriod && (certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow
+            || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow)))
         {
             certificate.Dispose();
             throw new InvalidOperationException($"{purpose}証明書の秘密鍵と有効期限を確認してください。");
