@@ -150,17 +150,18 @@ public sealed class BridgeFlowTests
     public async Task 証明書を入れ替えても旧世代を指定すれば発行済みトークンと状態を使い新しい署名は現行で行う()
     {
         var root = Path.Combine(Path.GetTempPath(), "mcp-bridge-test-" + Guid.NewGuid().ToString("N"));
+        var prefix = "test-" + Guid.NewGuid().ToString("N");
         var oldPfx = NewPfx("CN=old", 2);
         var newPfx = NewPfx("CN=new", 30);
         Tokens tokens;
-        using (var first = new BridgeFactory(root: root, configure: o => UseCertificates(o, oldPfx, oldPfx)))
+        using (var first = new BridgeFactory(root: root, kvsPrefix: prefix, configure: o => UseCertificates(o, oldPfx, oldPfx)))
         using (var browser = first.Browser())
         {
             tokens = await AuthorizeAsync(browser);
         }
 
         // 現行を新世代へ、旧世代を旧枠へ移した再起動。
-        using (var rotated = new BridgeFactory(root: root, configure: o =>
+        using (var rotated = new BridgeFactory(root: root, kvsPrefix: prefix, configure: o =>
         {
             UseCertificates(o, newPfx, newPfx);
             o.PreviousSigningCertificateBase64 = oldPfx;
@@ -180,7 +181,7 @@ public sealed class BridgeFlowTests
         }
 
         // 旧世代を外す（旧世代の廃止後）と、旧世代で保護した状態は使えない。
-        using var removed = new BridgeFactory(root: root, configure: o => UseCertificates(o, newPfx, newPfx));
+        using var removed = new BridgeFactory(root: root, kvsPrefix: prefix, configure: o => UseCertificates(o, newPfx, newPfx));
         using var removedBrowser = removed.Browser();
         var result = await Record.ExceptionAsync(async () =>
             Assert.Equal(HttpStatusCode.OK, (await removedBrowser.SendAsync(McpRequest(tokens.AccessToken))).StatusCode));
