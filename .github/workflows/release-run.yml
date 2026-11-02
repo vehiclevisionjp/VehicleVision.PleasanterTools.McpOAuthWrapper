@@ -47,7 +47,7 @@ jobs:
         run: |
           # master への push の CI が終わる前に動かしても、検査が揃うまで待つ（失敗が見えたら待たずに止まる）
           $deadline = (Get-Date).AddMinutes(15)
-          $required = @('build-test','instructions','Analyze (csharp)','nuget-audit','npm-audit','KVS の認証・中継テスト（Redis）','KVS の認証・中継テスト（Valkey）')
+          $required = @('build-test','instructions','Analyze (csharp)','nuget-audit','npm-audit','kvs-tests / Redis','kvs-tests / Valkey')
           while ($true) {
             $checks = gh api "repos/$env:REPOSITORY/commits/$env:COMMIT/check-runs?per_page=100" | ConvertFrom-Json
             if ($LASTEXITCODE -ne 0) { throw '検査結果を取得できません。' }
