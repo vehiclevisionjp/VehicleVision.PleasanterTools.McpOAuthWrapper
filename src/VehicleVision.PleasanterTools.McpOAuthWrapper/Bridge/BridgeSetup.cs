@@ -135,6 +135,7 @@ public static class BridgeSetup
             builder.Services.AddDbContextFactory<OAuthState>(db =>
             { db.UseSqlite($"Data Source={Path.Combine(directory, "oauth.db")}"); db.UseOpenIddict(); });
             builder.Services.AddSingleton<IBridgeState, SqliteBridgeState>();
+            builder.Services.AddHostedService<SqliteMaintenance>();
             protection.PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(directory, "keys")));
         }
         builder.Services.AddSingleton<LoginGuard>();

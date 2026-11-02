@@ -645,6 +645,57 @@ public sealed class BridgeFlowTests
     }
 
     [Fact]
+    public async Task Sqliteの整理は失効済みのトークンだけを消し有効なトークンは残す()
+    {
+        using var factory = new BridgeFactory();
+        if (factory.IsKvs)
+        {
+            // KVS モードの整理は KvsMaintenance の役目。ここは SQLite モードの確認。
+            return;
+        }
+
+        using var browser = factory.Browser();
+        var tokens = await AuthorizeAsync(browser);
+        var scopes = factory.Services.GetRequiredService<IServiceScopeFactory>();
+        // 保持期間（作成から 1 日）を過ぎた状態を作るため、閾値を未来にする。
+        var future = DateTimeOffset.UtcNow.AddDays(2);
+
+        // 交換済みの認可コードは使用済みなので、最初の整理で消える。有効なアクセス・リフレッシュトークンは残る。
+        await SqliteMaintenance.PruneAsync(scopes, future, CancellationToken.None);
+        var before = await CountTokensAsync(scopes);
+        Assert.Equal(2, before);
+        await SqliteMaintenance.PruneAsync(scopes, future, CancellationToken.None);
+        Assert.Equal(before, await CountTokensAsync(scopes));
+
+        var revocation = await browser.PostAsync("/connect/revoke", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["client_id"] = "test-client", ["token"] = tokens.AccessToken, ["token_type_hint"] = "access_token" }));
+        Assert.Equal(HttpStatusCode.OK, revocation.StatusCode);
+        await SqliteMaintenance.PruneAsync(scopes, future, CancellationToken.None);
+        Assert.True(await CountTokensAsync(scopes) < before);
+
+        // 閾値より新しいものは、失効済みでも消さない。
+        var again = await AuthorizeAsync(browser);
+        var revoke2 = await browser.PostAsync("/connect/revoke", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["client_id"] = "test-client", ["token"] = again.AccessToken, ["token_type_hint"] = "access_token" }));
+        Assert.Equal(HttpStatusCode.OK, revoke2.StatusCode);
+        var kept = await CountTokensAsync(scopes);
+        await SqliteMaintenance.PruneAsync(scopes, DateTimeOffset.UtcNow.AddDays(-1), CancellationToken.None);
+        Assert.Equal(kept, await CountTokensAsync(scopes));
+
+        // 有効なリフレッシュトークンは整理のあとも使える。
+        var refresh = await browser.PostAsync("/connect/token", new FormUrlEncodedContent(new Dictionary<string, string>
+        { ["grant_type"] = "refresh_token", ["client_id"] = "test-client", ["refresh_token"] = tokens.RefreshToken }));
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+    }
+
+    private static async Task<int> CountTokensAsync(IServiceScopeFactory scopes)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        var manager = scope.ServiceProvider.GetRequiredService<OpenIddict.Abstractions.IOpenIddictTokenManager>();
+        return (int)await manager.CountAsync();
+    }
+
+    [Fact]
     public async Task 同じ接続元のAPIキー認証は失敗回数制限で拒否する()
     {
         using var factory = new BridgeFactory();
