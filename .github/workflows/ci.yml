@@ -108,3 +108,56 @@ jobs:
       - run: dotnet restore --locked-mode
       - run: dotnet build --no-restore -c Release
       - run: dotnet test --no-build --no-restore -c Release
+  database-tests:
+    name: database-tests / ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: SQLServer
+            dbms: SQLServer
+            image: mcr.microsoft.com/mssql/server:2025-CU8-ubuntu-24.04
+            port: 1433
+          - name: PostgreSQL
+            dbms: PostgreSQL
+            image: postgres:17
+            port: 5432
+          - name: MySQL
+            dbms: MySQL
+            image: mysql:8.4
+            port: 3306
+    services:
+      database:
+        image: ${{ matrix.image }}
+        ports:
+          - 127.0.0.1:${{ matrix.port }}:${{ matrix.port }}
+        # 使わない変数は各イメージが無視する。値は CI 専用のダミーで、Secrets は使わない。
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: Vv1!ci0dummy0admin0password
+          POSTGRES_PASSWORD: Vv1!ci0dummy0admin0password
+          POSTGRES_DB: smoke
+          MYSQL_ROOT_PASSWORD: Vv1!ci0dummy0admin0password
+          MYSQL_DATABASE: smoke
+          MYSQL_ROOT_HOST: '%'
+    env:
+      SMOKE_ADMIN_PASSWORD: Vv1!ci0dummy0admin0password
+      SMOKE_READER_PASSWORD: Vv2!ci0dummy0reader0password
+      SMOKE_PORT: ${{ matrix.port }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: ロック済み依存を復元する
+        run: dotnet restore _development/tests/database-smoke/DatabaseSmoke.csproj --locked-mode
+      - name: 検証プログラムをビルドする
+        run: dotnet build _development/tests/database-smoke/DatabaseSmoke.csproj --no-restore -c Release
+      - name: 実 DB で検証する（起動待ちは検証プログラムが 60 秒まで行う）
+        run: dotnet _development/tests/database-smoke/bin/Release/net10.0/DatabaseSmoke.dll ${{ matrix.dbms }}
