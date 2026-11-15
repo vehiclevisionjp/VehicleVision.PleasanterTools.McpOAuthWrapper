@@ -430,7 +430,7 @@ This tool is not used in the release binaries.
 ==============================================================================
 
 Components:
-  MySqlConnector 2.6.2  [Copyright 2016–2026 Bradley Grainger]
+  MySqlConnector 3.0.0  [Copyright 2016–2026 Bradley Grainger]
 
 License text source: https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE
 
@@ -555,7 +555,7 @@ Components:
   Google.Apis.Core 1.73.0  [Copyright 2021 Google LLC]
   Google.Cloud.Iam.V1 3.5.0  [Copyright 2025 Google LLC]
   Google.Cloud.Location 2.4.0  [Copyright 2025 Google LLC]
-  Google.Cloud.SecretManager.V1 2.8.0  [Copyright 2026 Google LLC]
+  Google.Cloud.SecretManager.V1 3.0.0  [Copyright 2026 Google LLC]
   Grpc.Auth 2.71.0  [Copyright 2019 The gRPC Authors]
   Grpc.Core.Api 2.71.0  [Copyright 2019 The gRPC Authors]
   Grpc.Net.Client 2.71.0  [Copyright 2019 The gRPC Authors]

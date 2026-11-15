@@ -164,8 +164,8 @@
       },
       "Google.Cloud.SecretManager.V1": {
         "type": "Transitive",
-        "resolved": "2.8.0",
-        "contentHash": "S5bDJUkR50TzEnZdaTwSY4S8q+VlTu3W00Te10x5fK0PdjY++3sOGj0cNxFSy9QjX34Iz4Fn1OxltvQ+qoHmPw==",
+        "resolved": "3.0.0",
+        "contentHash": "HFcAocoIemP+OKlZ3mhZX++sn760BOTyB1ENLFbITfKsfuyCGt2QqyiozbwxfAyCwU3YnI/UZ4NHwiu+yC84Tw==",
         "dependencies": {
           "Google.Api.Gax.Grpc": "[4.13.1, 5.0.0)",
           "Google.Cloud.Iam.V1": "[3.5.0, 4.0.0)",
@@ -872,11 +872,11 @@
       },
       "MySqlConnector": {
         "type": "Transitive",
-        "resolved": "2.6.2",
-        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "resolved": "3.0.0",
+        "contentHash": "ioYpdWl4xa9iVNsnWzIsYUuSr5MJ3KRZJ69QvzQdfDd1ax6s6GDXs65gCTt/eY/fzG4IiYxCgiu5urWUfk3AwQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.15",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.15"
         }
       },
       "Newtonsoft.Json": {
@@ -1341,11 +1341,11 @@
           "AWSSDK.SecretsManager": "[4.0.100.22, )",
           "Azure.Identity": "[1.21.0, )",
           "Azure.Security.KeyVault.Secrets": "[4.12.0, )",
-          "Google.Cloud.SecretManager.V1": "[2.8.0, )",
+          "Google.Cloud.SecretManager.V1": "[3.0.0, )",
           "Microsoft.AspNetCore.DataProtection.StackExchangeRedis": "[10.0.15, )",
           "Microsoft.Data.SqlClient": "[7.1.2, )",
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.15, )",
-          "MySqlConnector": "[2.6.2, )",
+          "MySqlConnector": "[3.0.0, )",
           "Npgsql": "[10.0.3, )",
           "OCI.DotNetSDK.Secrets": "[150.0.0, )",
           "OpenIddict.AspNetCore": "[7.7.2, )",
