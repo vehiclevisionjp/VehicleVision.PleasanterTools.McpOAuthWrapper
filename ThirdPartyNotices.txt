@@ -112,7 +112,7 @@ Components:
   Microsoft.Extensions.Http.Polly 10.0.15  [© Microsoft Corporation. All rights reserved.]
   System.CodeDom 7.0.0  [© Microsoft Corporation. All rights reserved.]
   System.Configuration.ConfigurationManager 9.0.18  [© Microsoft Corporation. All rights reserved.]
-  System.IO.Hashing 11.0.0  [© Microsoft Corporation. All rights reserved.]
+  System.IO.Hashing 10.0.13  [© Microsoft Corporation. All rights reserved.]
   System.Management 7.0.2  [© Microsoft Corporation. All rights reserved.]
   System.Memory.Data 10.0.10  [© Microsoft Corporation. All rights reserved.]
   System.Security.Cryptography.ProtectedData 9.0.18  [© Microsoft Corporation. All rights reserved.]
@@ -548,9 +548,8 @@ OR MODIFICATIONS.
 ==============================================================================
 
 Components:
-  AWSSDK.Core 4.1.0
-  AWSSDK.Extensions.Numerics 4.1.0
-  AWSSDK.SecretsManager 4.1.1
+  AWSSDK.Core 4.0.102.14
+  AWSSDK.SecretsManager 4.0.100.22
   Google.Apis 1.73.0  [Copyright 2021 Google LLC]
   Google.Apis.Auth 1.73.0  [Copyright 2021 Google LLC]
   Google.Apis.Core 1.73.0  [Copyright 2021 Google LLC]
