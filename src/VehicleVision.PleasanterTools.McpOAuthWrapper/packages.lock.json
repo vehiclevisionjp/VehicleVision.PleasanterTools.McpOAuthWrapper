@@ -31,9 +31,9 @@
       },
       "Google.Cloud.SecretManager.V1": {
         "type": "Direct",
-        "requested": "[2.8.0, )",
-        "resolved": "2.8.0",
-        "contentHash": "S5bDJUkR50TzEnZdaTwSY4S8q+VlTu3W00Te10x5fK0PdjY++3sOGj0cNxFSy9QjX34Iz4Fn1OxltvQ+qoHmPw==",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "HFcAocoIemP+OKlZ3mhZX++sn760BOTyB1ENLFbITfKsfuyCGt2QqyiozbwxfAyCwU3YnI/UZ4NHwiu+yC84Tw==",
         "dependencies": {
           "Google.Api.Gax.Grpc": "[4.13.1, 5.0.0)",
           "Google.Cloud.Iam.V1": "[3.5.0, 4.0.0)",
@@ -80,9 +80,9 @@
       },
       "MySqlConnector": {
         "type": "Direct",
-        "requested": "[2.6.2, )",
-        "resolved": "2.6.2",
-        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ=="
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "ioYpdWl4xa9iVNsnWzIsYUuSr5MJ3KRZJ69QvzQdfDd1ax6s6GDXs65gCTt/eY/fzG4IiYxCgiu5urWUfk3AwQ=="
       },
       "Npgsql": {
         "type": "Direct",
