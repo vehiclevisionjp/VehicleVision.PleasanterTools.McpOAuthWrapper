@@ -65,14 +65,10 @@ MCP の認証・トランスポート仕様を新しい事実として記す場�
 
 ## 採用元
 
-2026-10-27 参照。以下の Template 承認済みコミットの配布手順とスクリプトを採用しました。
+2026-10-27 参照。共通の雛形の承認済みコミットの配布手順とスクリプトを採用しました。
 アプリ固有のライセンス・認証・DB・KVS・画面・配布方式は維持します。
 
 - コミット: `3312f003fbe9827090e20bc643800824bdf30e22`
-- [配布手順][distribution]
-- [取得スクリプト][sync]
-- [ネットワーク不要の回帰テスト][test]
-
-[distribution]: https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Template/blob/3312f003fbe9827090e20bc643800824bdf30e22/_documents/参照ソースのオンデマンド取得への配布手順.md
-[sync]: https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Template/blob/3312f003fbe9827090e20bc643800824bdf30e22/scripts/sync-reference.sh
-[test]: https://github.com/vehiclevisionjp/VehicleVision.PleasanterTools.Template/blob/3312f003fbe9827090e20bc643800824bdf30e22/scripts/test-sync-reference.sh
+- 配布手順（参照ソースのオンデマンド取得）
+- 取得スクリプト（`scripts/sync-reference.sh`）
+- ネットワーク不要の回帰テスト（`scripts/test-sync-reference.sh`）
