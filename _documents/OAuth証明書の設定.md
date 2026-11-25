@@ -40,7 +40,7 @@ PFX ファイルが存在しない場合は、次回起動時にその用途の�
 
 ファイルは [導入手順の手動生成](導入手順.md#oauth-用証明書を生成する) に従います。相対パスはアプリのコンテンツルートを基準に解決します。
 
-Base64 は PFX 全体をエンコードした値です。環境変数 MCP_GENERAL_SigningCertificateBase64／MCP_GENERAL_EncryptionCertificateBase64 や配置先の秘密設定から供給し、公開設定例へ値を書かないでください。証明書はメモリ上で読み込み、秘密鍵をファイルや OS ストアへ書き出しません。CertificatePassword は両用途共通です。
+Base64 は PFX 全体をエンコードした値です。環境変数 MCP_GENERAL_SigningCertificateBase64／MCP_GENERAL_EncryptionCertificateBase64 や配置先の秘密設定から供給し、公開設定例へ値を書かないでください。証明書はメモリ上で読み込み、秘密鍵をファイルや OS ストアへエクスポートしません。CertificatePassword は両用途共通です。
 
 ## Windows 証明書ストア
 
