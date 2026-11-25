@@ -520,7 +520,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 ==============================================================================
 
 Components:
-  Npgsql 10.0.3  [Copyright 2025 © The Npgsql Development Team]
+  Npgsql 10.0.4  [Copyright 2025 © The Npgsql Development Team]
 
 License text source: https://github.com/npgsql/npgsql/blob/main/LICENSE
 
@@ -548,8 +548,8 @@ OR MODIFICATIONS.
 ==============================================================================
 
 Components:
-  AWSSDK.Core 4.0.102.14
-  AWSSDK.SecretsManager 4.0.100.22
+  AWSSDK.Core 4.0.103
+  AWSSDK.SecretsManager 4.0.100.26
   Google.Apis 1.73.0  [Copyright 2021 Google LLC]
   Google.Apis.Auth 1.73.0  [Copyright 2021 Google LLC]
   Google.Apis.Core 1.73.0  [Copyright 2021 Google LLC]
