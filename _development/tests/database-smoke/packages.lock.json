@@ -690,8 +690,8 @@
       },
       "OCI.DotNetSDK.Common": {
         "type": "Transitive",
-        "resolved": "150.0.0",
-        "contentHash": "FeWcFmdLwq159RF7h8KbqkJsv4pDv0u9gYCLvKGobJOjWcmMhkPBe56Rmv1YdVreFagEEjnpWvm7V5vrcoThlA==",
+        "resolved": "154.0.0",
+        "contentHash": "c64EavzZ/1e5GPqgDxzywqkoYduXjzFWaz7OWEXeIXDntvQevnfbD0a3dSEX4U/HKvjLfEX597BDqT+B7VLkxg==",
         "dependencies": {
           "NLog": "4.7.2",
           "Newtonsoft.Json": "13.0.4",
@@ -703,10 +703,10 @@
       },
       "OCI.DotNetSDK.Secrets": {
         "type": "Transitive",
-        "resolved": "150.0.0",
-        "contentHash": "cSHhkVG6MgLyr2COyLvGvAh6+Vm+i+W1UcaCkJn50zlri7pRvQv7edVHAJpJA8ZB0S0w8h3y4YQauwr+Bfniyg==",
+        "resolved": "154.0.0",
+        "contentHash": "+u0Gretmqi1zwi4n7xzMFirQMRxGMIMAJ/3Y8ic6tge+DsuF63XhtQ/ThZwMYhsEWdwMe+lSGN973vk/ROLK8g==",
         "dependencies": {
-          "OCI.DotNetSDK.Common": "150.0.0"
+          "OCI.DotNetSDK.Common": "154.0.0"
         }
       },
       "OpenIddict": {
@@ -1098,7 +1098,7 @@
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.15, )",
           "MySqlConnector": "[3.0.0, )",
           "Npgsql": "[10.0.4, )",
-          "OCI.DotNetSDK.Secrets": "[150.0.0, )",
+          "OCI.DotNetSDK.Secrets": "[154.0.0, )",
           "OpenIddict.AspNetCore": "[7.9.0, )",
           "OpenIddict.EntityFrameworkCore": "[7.9.0, )",
           "StackExchange.Redis": "[3.4.35, )",
