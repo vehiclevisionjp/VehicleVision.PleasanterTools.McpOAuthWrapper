@@ -330,7 +330,7 @@ public static class BridgeSetup
         byte[]? pfx = null;
         try
         {
-            // Key Vault 参照の解決は App Service に任せる。秘密鍵をディスクへ書き出さない。
+            // Key Vault 参照の解決は App Service に任せる。秘密鍵をディスクへエクスポートしない。
             if (fromSecret)
             {
                 pfx = Convert.FromBase64String(base64);
