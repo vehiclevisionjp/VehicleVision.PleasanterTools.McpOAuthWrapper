@@ -793,10 +793,10 @@ License text source: LICENSE in the Google.Cloud.SecretManager.V1 2.8.0 package 
 ==============================================================================
 
 Components:
-  OCI.DotNetSDK.Common 150.0.0
-  OCI.DotNetSDK.Secrets 150.0.0
+  OCI.DotNetSDK.Common 154.0.0
+  OCI.DotNetSDK.Secrets 154.0.0
 
-License text source: LICENSE.txt in the OCI.DotNetSDK.Common 150.0.0 package
+License text source: LICENSE.txt in the OCI.DotNetSDK.Common 154.0.0 package
 
 Copyright (c) 2020, 2026, Oracle and/or its affiliates.
 
